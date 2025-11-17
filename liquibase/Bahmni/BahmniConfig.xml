@@ -1844,6 +1844,29 @@
             ALTER TABLE panel ALTER COLUMN description TYPE varchar(256);
         </sql>
     </changeSet>
+
+    <!-- LabBridge Integration Changesets - Pravin Timalsina -->
+    
+    <changeSet id="LABBRIDGE_UNIQUE_CONSTRAINTS_20251107" context="bahmni" author="PravinTimalsina">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="result_analysis_unique_no_analyte"/>
+            </not>
+        </preConditions>
+        <comment>Add unique constraints for LabBridge integration to prevent duplicate results from analyzers</comment>
+        <sql>
+            -- Create unique index for results without analyte_id (most common case)
+            CREATE UNIQUE INDEX result_analysis_unique_no_analyte 
+            ON clinlims.result (analysis_id) 
+            WHERE analyte_id IS NULL;
+            
+            -- Create unique index for results with analyte_id (less common case)
+            CREATE UNIQUE INDEX result_analysis_analyte_unique 
+            ON clinlims.result (analysis_id, analyte_id) 
+            WHERE analyte_id IS NOT NULL;
+        </sql>
+    </changeSet>
+    
+    
     
 </databaseChangeLog>
-
