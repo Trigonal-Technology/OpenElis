@@ -193,8 +193,9 @@ public class SamplePatientEntrySaveAction extends BaseAction {
 
 		String forward = FWD_SUCCESS;
 
-        AnalysisBuilder analysisBuilder = new AnalysisBuilder();
-        orgAddressExtra = new ArrayList<>();
+
+		AnalysisBuilder analysisBuilder = new AnalysisBuilder();
+		orgAddressExtra = new ArrayList<>();
 		observations = new ArrayList<>();
 		boolean useInitialSampleCondition = FormFields.getInstance().useField(Field.InitialSampleCondition);
 		BaseActionForm dynaForm = (BaseActionForm) form;
@@ -226,7 +227,7 @@ public class SamplePatientEntrySaveAction extends BaseAction {
 		testAndInitializePatientForSaving(mapping, request, patientInfo, patientUpdate);
 
 		initAccesionNumber(dynaForm);
-//		initProvider(dynaForm);
+//        initProvider(dynaForm);
 		initSampleData(dynaForm, receivedDateForDisplay, useInitialSampleCondition, trackPayments,
 				!isBlankOrNull(receivedTime), analysisBuilder);
 		initSampleHumanData();
@@ -542,7 +543,12 @@ public class SamplePatientEntrySaveAction extends BaseAction {
 
 		sample.setDomain(SystemConfiguration.getInstance().getHumanDomain());
 		sample.setStatusId(StatusOfSampleUtil.getStatusID(OrderStatus.Entered));
-        return sample;
+
+		if (!isBlankOrNull(accessionNumber)) {
+        sample.setCollectionDate(new java.sql.Timestamp(System.currentTimeMillis()));
+		}
+		return sample;
+		
 	}
 
 	private void initSampleHumanData() {
@@ -621,6 +627,14 @@ public class SamplePatientEntrySaveAction extends BaseAction {
 	@Override
 	protected String getPageSubtitleKey() {
 		return "sample.entry.title";
+	}
+
+		// Helper to check if timestamp is midnight
+	private boolean isMidnight(java.sql.Timestamp ts) {
+		if (ts == null) return true;
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(ts);
+		return cal.get(Calendar.HOUR_OF_DAY) == 0 && cal.get(Calendar.MINUTE) == 0 && cal.get(Calendar.SECOND) == 0;
 	}
 
 

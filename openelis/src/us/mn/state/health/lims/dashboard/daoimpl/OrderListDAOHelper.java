@@ -45,11 +45,14 @@ public class OrderListDAOHelper {
                 "sample.id AS id, \n" +
                 "sample.collection_date AS collection_date, \n" +
                 "sample.entered_date AS entered_date, \n" +
+                "sample.received_date AS received_date, \n" +
+                "sample.lastupdated AS lastupdated, \n" +
                 "person.first_name AS first_name, \n" +
                 "person.middle_name AS middle_name, \n" +
                 "person.last_name AS last_name, \n" +
                 "patient_identity.identity_data AS st_number, \n" +
                 "sample_source.name AS sample_source, \n" +
+                "organization.name AS location_name, \n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + pendingAnalysisStatus + ") THEN 1 ELSE 0 END) as pending_tests_count,\n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + pendingValidationAnalysisStatus + ") THEN 1 ELSE 0 END) as pending_validation_count,\n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + referredAnalysisStatus + ") THEN 1 ELSE 0 END) as referred_tests_count,\n" +
@@ -59,6 +62,8 @@ public class OrderListDAOHelper {
                 "FROM Sample AS sample\n" +
                 "LEFT OUTER JOIN Sample_Human AS sampleHuman ON sampleHuman.samp_Id = sample.id \n" +
                 "LEFT  JOIN sample_source ON sample_source.id = sample.sample_source_id \n" +
+                "LEFT OUTER JOIN sample_organization ON sample_organization.samp_id = sample.id AND sample_organization.samp_org_type = 'P'\n" +
+                "LEFT OUTER JOIN organization ON organization.id = sample_organization.org_id\n" +
                 "INNER JOIN Patient AS patient ON sampleHuman.patient_id = patient.id \n" +
                 "INNER JOIN Person AS person ON patient.person_id = person.id \n" +
                 "INNER JOIN patient_identity ON patient_identity.patient_id = patient.id \n" +
@@ -69,7 +74,7 @@ public class OrderListDAOHelper {
                 "INNER JOIN test_section ON test.test_section_id = test_section.id \n" +
                 "LEFT OUTER JOIN document_track as document_track ON sample.id = document_track.row_id AND document_track.name = 'patientHaitiClinical' and document_track.parent_id is null\n" +
                 "WHERE " + condition + "\n" +
-                "GROUP BY sample.accession_number, sample.uuid,sample.id, sample.collection_date, person.first_name, person.middle_name, person.last_name, sample_source.name, patient_identity.identity_data, document_track.report_generation_time\n" +
+                "GROUP BY sample.accession_number, sample.uuid,sample.id, sample.collection_date, sample.received_date, person.first_name, person.middle_name, person.last_name, sample_source.name, organization.name, patient_identity.identity_data, document_track.report_generation_time\n" +
                 "ORDER BY " + OrderBy + " DESC\n" +
                 "LIMIT 1000;";
     }
@@ -83,11 +88,14 @@ public class OrderListDAOHelper {
                 "sample.id AS id, \n" +
                 "sample.collection_date AS collection_date, \n" +
                 "sample.entered_date AS entered_date, \n" +
+                "sample.received_date AS received_date, \n" +
+                "sample.lastupdated AS lastupdated, \n" +
                 "person.first_name AS first_name, \n" +
                 "person.middle_name AS middle_name, \n" +
                 "person.last_name AS last_name, \n" +
                 "patient_identity.identity_data AS st_number, \n" +
                 "sample_source.name AS sample_source, \n" +
+                "organization.name AS location_name, \n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + pendingAnalysisStatus + ") THEN 1 ELSE 0 END) as pending_tests_count,\n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + pendingValidationAnalysisStatus + ") THEN 1 ELSE 0 END) as pending_validation_count,\n" +
                 "SUM(CASE WHEN  analysis.status_id IN (" + referredAnalysisStatus + ") THEN 1 ELSE 0 END) as referred_tests_count,\n" +
@@ -107,6 +115,8 @@ public class OrderListDAOHelper {
                 ") list on list.id = sample.id\n" +
                 "LEFT OUTER JOIN Sample_Human AS sampleHuman ON sampleHuman.samp_Id = sample.id \n" +
                 "LEFT  JOIN sample_source ON sample_source.id = sample.sample_source_id \n" +
+                "LEFT OUTER JOIN sample_organization ON sample_organization.samp_id = sample.id AND sample_organization.samp_org_type = 'P'\n" +
+                "LEFT OUTER JOIN organization ON organization.id = sample_organization.org_id \n" +
                 "INNER JOIN Patient AS patient ON sampleHuman.patient_id = patient.id \n" +
                 "INNER JOIN Person AS person ON patient.person_id = person.id \n" +
                 "INNER JOIN patient_identity ON patient_identity.patient_id = patient.id \n" +
@@ -117,7 +127,7 @@ public class OrderListDAOHelper {
                 "INNER JOIN test_section ON test.test_section_id = test_section.id \n" +
                 "LEFT OUTER JOIN document_track as document_track ON sample.id = document_track.row_id AND document_track.name = 'patientHaitiClinical' and document_track.parent_id is null \n" +
                 "WHERE " + condition + "\n" +
-                "GROUP BY sample.accession_number, sample.uuid,sample.id, sample.collection_date, sample.lastupdated, person.first_name, person.middle_name, person.last_name, sample_source.name, patient_identity.identity_data, document_track.report_generation_time \n" +
+                "GROUP BY sample.accession_number, sample.uuid,sample.id, sample.collection_date, sample.received_date, sample.lastupdated, person.first_name, person.middle_name, person.last_name, sample_source.name, organization.name, patient_identity.identity_data, document_track.report_generation_time \n" +
                 "ORDER BY " + OrderBy + " DESC\n" +
                 "LIMIT 1000;";
     }
@@ -131,6 +141,7 @@ public class OrderListDAOHelper {
                 "sample.id AS id, \n" +
                 "sample.collection_date AS collection_date, \n" +
                 "sample.entered_date AS entered_date, \n" +
+                "sample.lastupdated AS lastupdated, \n" +
                 "person.first_name AS first_name, \n" +
                 "person.middle_name AS middle_name, \n" +
                 "person.last_name AS last_name, \n" +
@@ -172,6 +183,7 @@ public class OrderListDAOHelper {
                 "sample.id AS id, \n" +
                 "sample.collection_date AS collection_date, \n" +
                 "sample.entered_date AS entered_date, \n" +
+                "sample.lastupdated AS lastupdated, \n" +
                 "person.first_name AS first_name, \n" +
                 "person.middle_name AS middle_name, \n" +
                 "person.last_name AS last_name, \n" +
@@ -247,12 +259,14 @@ public class OrderListDAOHelper {
                 accessionResultSet.getInt("pending_validation_count"),
                 accessionResultSet.getInt("referred_tests_count"),
                 accessionResultSet.getInt("total_test_count"),
-                accessionResultSet.getDate("collection_date"),
-                accessionResultSet.getDate("entered_date"),
+                accessionResultSet.getTimestamp("collection_date"),
+                accessionResultSet.getTimestamp("entered_date"),
+                accessionResultSet.getTimestamp("received_date"),
                 comments,
                 sectionNames,
                 accessionResultSet.getString("sample_type"),
-                priority
+                priority,
+                accessionResultSet.getTimestamp("lastupdated")
         );
     }
 
@@ -272,10 +286,12 @@ public class OrderListDAOHelper {
                 accessionResultSet.getInt("pending_validation_count"),
                 accessionResultSet.getInt("referred_tests_count"),
                 accessionResultSet.getInt("total_test_count"),
-                accessionResultSet.getDate("collection_date"),
-                accessionResultSet.getDate("entered_date"),
+                accessionResultSet.getTimestamp("collection_date"),
+                accessionResultSet.getTimestamp("entered_date"),
+                accessionResultSet.getTimestamp("received_date"),
                 comments,
-                sectionNames
+                sectionNames,
+                accessionResultSet.getTimestamp("lastupdated")
         );
     }
 }

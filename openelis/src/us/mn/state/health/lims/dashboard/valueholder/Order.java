@@ -47,12 +47,15 @@ public class Order {
     private String sectionNames;
     private String sampleType;
     private String priority;
+    private Date receivedDate;
+    private String location;
+    private Date lastupdated;
 
     public Order() {
     }
 
     public Order(String accessionNumber, String uuid, String orderId, String stNumber, String firstName, String middleName, String lastName, String source, boolean isCompleted, boolean isPrinted,
-                 int pendingTestCount, int pendingValidationCount, int referredTestCount, int totalTestCount, Date collectionDate, Date enteredDate, String comments, String sectionNames, String sampleType, String priority) {
+                 int pendingTestCount, int pendingValidationCount, int referredTestCount, int totalTestCount, Date collectionDate, Date enteredDate, Date receivedDate, String comments, String sectionNames, String sampleType, String priority, Date lastupdated) {
         this.accessionNumber = accessionNumber;
         this.uuid = uuid;
         this.orderId = orderId;
@@ -69,14 +72,17 @@ public class Order {
         this.totalTestCount = totalTestCount;
         this.collectionDate = collectionDate;
         this.enteredDate = enteredDate;
-        this.comments = comments;
-        this.sectionNames = sectionNames;
-        this.sampleType = sampleType;
-        this.priority = priority;
+    this.comments = comments;
+    this.sectionNames = sectionNames;
+    this.sampleType = sampleType;
+    this.priority = priority;
+    this.receivedDate = receivedDate;
+    this.lastupdated = lastupdated;
+    this.location = null;
     }
 
     public Order(String accessionNumber, String uuid, String orderId, String stNumber, String firstName, String middleName, String lastName, String source, boolean isCompleted, boolean isPrinted,
-                 int pendingTestCount, int pendingValidationCount,int referredTestCount, int totalTestCount, Date collectionDate, Date enteredDate, String comments, String sectionNames) {
+                 int pendingTestCount, int pendingValidationCount,int referredTestCount, int totalTestCount, Date collectionDate, Date enteredDate, Date receivedDate, String comments, String sectionNames, Date lastupdated) {
         this.accessionNumber = accessionNumber;
         this.uuid = uuid;
         this.orderId = orderId;
@@ -93,8 +99,11 @@ public class Order {
         this.totalTestCount = totalTestCount;
         this.collectionDate = collectionDate;
         this.enteredDate = enteredDate;
+        this.receivedDate = receivedDate;
         this.comments = comments;
         this.sectionNames = sectionNames;
+        this.lastupdated = lastupdated;
+        this.location = null;
     }
 
     public String getAccessionNumber() {
@@ -218,6 +227,32 @@ public class Order {
         this.enteredDate = enteredDate;
     }
 
+    @JsonSerialize(using = JsonTimeSerializer.class)
+    public Date getReceivedDate() {
+        return receivedDate;
+    }
+
+    public void setReceivedDate(Date receivedDate) {
+        this.receivedDate = receivedDate;
+    }
+
+    @JsonSerialize(using = JsonTimeSerializer.class)
+    public Date getLastupdated() {
+        return lastupdated;
+    }
+    
+
+    public void setLastupdated(Date lastupdated) {
+        this.lastupdated = lastupdated;
+    }
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
     public void setOrderId(String orderId) {
         this.orderId = orderId;
     }
@@ -251,14 +286,17 @@ public class Order {
                 Objects.equals(comments, order.comments) &&
                 Objects.equals(sectionNames, order.sectionNames) &&
                 Objects.equals(sampleType, order.sampleType) &&
-                Objects.equals(priority, order.priority);
+                Objects.equals(priority, order.priority) &&
+                Objects.equals(receivedDate, order.receivedDate) &&
+                Objects.equals(lastupdated, order.lastupdated) &&
+                Objects.equals(location, order.location);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(accessionNumber, uuid, orderId, stNumber, firstName, middleName, lastName, source,
                 pendingTestCount, pendingValidationCount, referredTestCount, totalTestCount, collectionDate, isPrinted, isCompleted,
-                enteredDate, comments, sectionNames, sampleType, priority);
+                enteredDate, receivedDate, comments, sectionNames, sampleType, priority, lastupdated,location);
     }
 
     public String getSectionNames() {

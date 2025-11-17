@@ -15,7 +15,6 @@
 <bean:define id="todaySampleNotCollectedListJson" name="<%=formName%>" property="todaySampleNotCollectedList" />
 <bean:define id="backlogSampleNotCollectedListJson" name="<%=formName%>" property="backlogSampleNotCollectedList" />
 <bean:define id="backlogOrderListJson" name="<%=formName%>" property="backlogOrderList" />
-<bean:define id="showPriorityColumn" name="<%=formName%>" property="isGroupBySample" />
 
 <%!
 String path = "";
@@ -108,6 +107,10 @@ basePath = path + "/";
         data-patientID = '<bean:message key="dashboard.sample.column.patientID"/>'
         data-patientName = '<bean:message key="dashboard.sample.column.patientName"/>'
         data-source = '<bean:message key="dashboard.sample.column.source"/>'
+        data-location = '<bean:message key="dashboard.sample.column.location"/>'
+        data-orderDate = '<bean:message key="dashboard.sample.column.orderDate"/>'
+        data-orderReceivedDate = '<bean:message key="dashboard.sample.column.orderReceivedDate"/>'
+        data-collectedAt = '<bean:message key="dashboard.sample.column.collectedAt"/>'
         data-sectionNames = '<bean:message key="dashboard.sample.column.sectionNames"/>'
         data-sampleType = '<bean:message key="dashboard.sample.column.sampleType"/>'
         data-priority = '<bean:message key="dashboard.sample.column.priority"/>'
@@ -165,20 +168,6 @@ basePath = path + "/";
                     <svg style="margin-left:-10px;margin-bottom:-20px;padding:-18px;height:50px;" id="barcode"></svg>
                 </div>
             </div>
-            <div class="col-12" style=" display: inline-block;">
-                <div id="secondLabelDetails">
-                    <div style="font-family: sans-serif; font-size: 8px; margin-right: 20px; margin-top: -4px;  height: 15px; margin-bottom: 2px">
-                        <span class='label-value' id="secondLabelPatientName"></span>
-                        <span class='label-value' style="padding-left:5px;" id="secondLabelPatientGender"></span>
-                        <span class='label-value' style="padding-left:5px;" id="secondLabelPatientAge"></span>
-                        <br/>
-                        <span class='label-value' id="secondLabelPatientId"></span>
-                        <span class='label-value' style="padding-left:20px;" id="secondLabelCollectionDate"></span>
-                    </div>
-                    <svg style="margin-left:-10px;margin-bottom:-20px;padding:-18px;height:50px;"
-                         id="secondLabelBarcode"></svg>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -220,7 +209,6 @@ basePath = path + "/";
         var todaySampleNotCollectedList = JSON.parse('<%=todaySampleNotCollectedListJson%>');
         var backlogSampleNotCollectedList = JSON.parse('<%=backlogSampleNotCollectedListJson%>');
         var backlogOrderList = JSON.parse('<%=backlogOrderListJson%>');
-        var showPriorityColumn = <%=showPriorityColumn%>;
 
         var isToday = function(date) {
             // ISO date format
@@ -241,29 +229,29 @@ basePath = path + "/";
 
        showStats(todayStats)
 
-        var todaySamplesToCollectObject = new order("#todaySamplesToCollectListContainer-slick-grid", todaySampleNotCollectedList, generateAllLinksForOrder, getColumnsForSampleNotCollected, false, showPriorityColumn);
+        var todaySamplesToCollectObject = new order("#todaySamplesToCollectListContainer-slick-grid", todaySampleNotCollectedList, generateAllLinksForOrder, getColumnsForSampleNotCollected, false);
         var dataViewForTodaySamplesToCollect = new Slick.Data.DataView();
         var gridForTodaySamplesToCollect = new Slick.Grid(todaySamplesToCollectObject.div, dataViewForTodaySamplesToCollect, todaySamplesToCollectObject.columns,options);
         createGrid(gridForTodaySamplesToCollect, dataViewForTodaySamplesToCollect, todaySamplesToCollectObject, onRowSelection);
 
-        var backlogSamplesToCollectObject = new order("#backlogSamplesToCollectListContainer-slick-grid", backlogSampleNotCollectedList, generateAllLinksForOrder, getColumnsForSampleNotCollected, false, showPriorityColumn);
+        var backlogSamplesToCollectObject = new order("#backlogSamplesToCollectListContainer-slick-grid", backlogSampleNotCollectedList, generateAllLinksForOrder, getColumnsForSampleNotCollected, false);
         var dataViewForBacklogSamplesToCollect = new Slick.Data.DataView();
         var gridForBacklogSamplesToCollect = new Slick.Grid(backlogSamplesToCollectObject.div, dataViewForBacklogSamplesToCollect, backlogSamplesToCollectObject.columns,options);
         createGrid(gridForBacklogSamplesToCollect, dataViewForBacklogSamplesToCollect, backlogSamplesToCollectObject, onRowSelection);
 
         if(<%= showReferredTestsCount%>) { // show referred Test count column in dashboard
-            var todayOrdersObject = new order("#todaySamplesCollectedListContainer-slick-grid", todayOrderList, generateAllLinksForOrder, getColumnsForTodayOrderWithReferredOutTestsCountColumn, <%= alwaysValidate%>, showPriorityColumn);
+            var todayOrdersObject = new order("#todaySamplesCollectedListContainer-slick-grid", todayOrderList, generateAllLinksForOrder, getColumnsForTodayOrderWithReferredOutTestsCountColumn, <%= alwaysValidate%>);
         } else {
-            var todayOrdersObject = new order("#todaySamplesCollectedListContainer-slick-grid", todayOrderList, generateAllLinksForOrder, getColumnsForTodayOrder, <%= alwaysValidate%>, showPriorityColumn);
+            var todayOrdersObject = new order("#todaySamplesCollectedListContainer-slick-grid", todayOrderList, generateAllLinksForOrder, getColumnsForTodayOrder, <%= alwaysValidate%>);
         }
         var dataViewForTodayTab = new Slick.Data.DataView();
         var gridForTodayOrder = new Slick.Grid(todayOrdersObject.div, dataViewForTodayTab, todayOrdersObject.columns,options);
         createGrid(gridForTodayOrder, dataViewForTodayTab, todayOrdersObject, onRowSelection);
 
         if(<%= showReferredTestsCount%>) { // show referred Test count column in dashboard
-            var backlogOrdersObject = new order("#backlogSamplesCollectedListContainer-slick-grid", backlogOrderList, generateAllLinksForOrder, getColumnsForBacklogOrderWithReferredOutTestsCountColumn, <%= alwaysValidate%>, showPriorityColumn);
+            var backlogOrdersObject = new order("#backlogSamplesCollectedListContainer-slick-grid", backlogOrderList, generateAllLinksForOrder, getColumnsForBacklogOrderWithReferredOutTestsCountColumn, <%= alwaysValidate%>);
         }else {
-            var backlogOrdersObject = new order("#backlogSamplesCollectedListContainer-slick-grid", backlogOrderList, generateAllLinksForOrder, getColumnsForBacklogOrder, <%= alwaysValidate%>, showPriorityColumn);
+            var backlogOrdersObject = new order("#backlogSamplesCollectedListContainer-slick-grid", backlogOrderList, generateAllLinksForOrder, getColumnsForBacklogOrder, <%= alwaysValidate%>);
         }
         var dataViewForBacklogTab = new Slick.Data.DataView();
         var gridForBacklogOrder = new Slick.Grid(backlogOrdersObject.div, dataViewForBacklogTab, backlogOrdersObject.columns,options);
@@ -337,7 +325,6 @@ basePath = path + "/";
 
     var showLabelDetails = function(firstName, middleName, lastName,gender, age,stn,collectionDate) {
         jQuery("#patientName").text(firstName + " " + lastName[0]);
-        jQuery("#secondLabelPatientName").text(firstName + " " + lastName[0]);
         if(gender==='M') {
             gender='Male'
         }
@@ -348,21 +335,15 @@ basePath = path + "/";
             gender='Other'
         }
         jQuery("#patientGender").text(gender);
-        jQuery("#secondLabelPatientGender").text(gender);
         jQuery("#patientAge").text(age);
-        jQuery("#secondLabelPatientAge").text(age);
         jQuery('#labelPatientId').text(stn);
-        jQuery('#secondLabelPatientId').text(stn);
         jQuery('#collectionDate').text(collectionDate);
-        jQuery('#secondLabelCollectionDate').text(collectionDate);
 
     }
 
     var showLabelDetailsWithoutPatientDetails = function(stn,collectionDate) {
         jQuery('#labelPatientId').text(stn);
-        jQuery('#secondLabelPatientId').text(stn);
         jQuery('#collectionDate').text(collectionDate);
-        jQuery('#secondLabelCollectionDate').text(collectionDate);
 
     }
 
@@ -388,11 +369,6 @@ basePath = path + "/";
                 }
                 jQuery(".accessionNumber").html(an);
                 jQuery("#barcode").JsBarcode(an,{
-                    width:1.1,
-                    height:25,
-                    fontSize: 9
-                });jQuery(".accessionNumber").html(an);
-                jQuery("#secondLabelBarcode").JsBarcode(an,{
                     width:1.1,
                     height:25,
                     fontSize: 9

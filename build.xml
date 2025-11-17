@@ -24,6 +24,11 @@
         <fileset dir="${web}/WEB-INF/lib">
             <include name="*.jar"/>
         </fileset>
+        <!-- Ensure core JRE classes are available to the Jasper JDT compiler -->
+        <pathelement path="${java.home}/lib/rt.jar"/>
+        <pathelement path="${java.home}/jre/lib/rt.jar"/>
+        <!-- Ensure the JDK compiler (javac) classes are available when compiler=javac -->
+        <pathelement path="${java.home}/lib/tools.jar"/>
     </path>
 
     <path id="test.lib">
@@ -40,7 +45,7 @@
 
     <taskdef name="propertyMerge" classname="org.jugbb.ant.propertymerge.PropertyMergeTask" classpathref="build.lib"/>
 
-    <target name="compass.compile" description="compile sass files">
+    <target name="compass.compile" description="compile sass files" unless="skip.compass">
         <exec dir="${web}" executable="compass">
             <arg line="compile"/>
         </exec>
@@ -65,13 +70,14 @@
         <classpath refid="build.lib"/>
     </taskdef>
 
-    <target name="jasper.compile" depends="java.compile">
+    <target name="jasper.compile" depends="java.compile" unless="skip.jasper">
         <jrc 
                 srcdir="${web}/WEB-INF/reports"
                 destdir="${web}/WEB-INF/reports"
                 tempdir="${web}/WEB-INF/reports"
                 keepjava="false"
-                xmlvalidation="true">
+                xmlvalidation="true"
+                compiler="net.sf.jasperreports.engine.design.JRJavacCompiler">
             <include name="**/*.jrxml"/>
             <classpath refid="jasper.lib"/>
         </jrc>

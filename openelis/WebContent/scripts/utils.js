@@ -51,15 +51,25 @@ OpenElis.Utils = {
     },
 
     getTime: function (time) {
-
-        time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
-
-        if (time.length > 1) { // If time format correct
-            time = time.slice(1); // Remove full string match value
-            time[5] = +time[0] < 12 ? 'AM' : 'PM'; // Set AM/PM
-            time[0] = +time[0] % 12 || 12; // Adjust hours
-        }
-        return time.join(''); // return adjusted time or original string
+        // Ensure we have a string in HH:mm format
+        if (!time) return "";
+        
+        // Parse hours and minutes
+        var parts = time.toString().split(':');
+        if (parts.length !== 2) return time; // Return original if not in HH:mm format
+        
+        var hours = parseInt(parts[0], 10);
+        var minutes = parts[1];
+        
+        // Determine AM/PM
+        var meridiem = hours >= 12 ? 'PM' : 'AM';
+        
+        // Convert to 12-hour format
+        hours = hours % 12;
+        hours = hours ? hours : 12; // Convert 0 to 12
+        
+        // Format with padding and AM/PM
+        return hours + ':' + minutes + ' ' + meridiem;
     }
 
 }

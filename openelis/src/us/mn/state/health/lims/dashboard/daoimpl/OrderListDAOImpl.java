@@ -174,8 +174,15 @@ public class OrderListDAOImpl implements OrderListDAO {
     private Order createOrder(ResultSet accessionResultSet, boolean completed) throws SQLException {
         String comments = getUniqueComments(accessionResultSet);
         String sectionNames = getUniqueSectionNames(accessionResultSet);
-
-        return orderListDAOHelper.getOrder(accessionResultSet, comments, sectionNames, completed);
+        Order order = orderListDAOHelper.getOrder(accessionResultSet, comments, sectionNames, completed);
+        // enrich with received date and location when present in SELECT
+        try {
+            order.setReceivedDate(accessionResultSet.getTimestamp("received_date"));
+        } catch (SQLException ignore) { /* field may be absent in some selects */ }
+        try {
+            order.setLocation(accessionResultSet.getString("location_name"));
+        } catch (SQLException ignore) { /* field may be absent in some selects */ }
+        return order;
     }
 
     private String getUniqueSectionNames(ResultSet accessionResultSet) throws SQLException {
