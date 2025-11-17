@@ -7,7 +7,6 @@ import java.util.List;
 import us.mn.state.health.lims.analysis.dao.AnalysisDAO;
 import us.mn.state.health.lims.analysis.daoimpl.AnalysisDAOImpl;
 import us.mn.state.health.lims.analysis.valueholder.Analysis;
-import us.mn.state.health.lims.common.util.SystemConfiguration;
 import us.mn.state.health.lims.dictionary.dao.DictionaryDAO;
 import us.mn.state.health.lims.dictionary.daoimpl.DictionaryDAOImpl;
 import us.mn.state.health.lims.dictionary.valueholder.Dictionary;
@@ -18,7 +17,6 @@ import us.mn.state.health.lims.result.valueholder.Result;
 import us.mn.state.health.lims.result.valueholder.ResultSignature;
 import us.mn.state.health.lims.sample.valueholder.Sample;
 import us.mn.state.health.lims.sampleitem.valueholder.SampleItem;
-import us.mn.state.health.lims.statusofsample.util.StatusOfSampleUtil;
 import us.mn.state.health.lims.systemuser.daoimpl.SystemUserDAOImpl;
 import us.mn.state.health.lims.systemuser.valueholder.SystemUser;
 import us.mn.state.health.lims.test.dao.TestDAO;
@@ -36,7 +34,6 @@ import us.mn.state.health.lims.testresult.valueholder.TestResult;
 import us.mn.state.health.lims.sample.dao.SampleDAO;
 import us.mn.state.health.lims.sample.daoimpl.SampleDAOImpl;
 import us.mn.state.health.lims.common.util.DateUtil;
-import us.mn.state.health.lims.common.util.SystemConfiguration;
 import us.mn.state.health.lims.statusofsample.util.StatusOfSampleUtil;
 import us.mn.state.health.lims.resultlimits.valueholder.ResultLimit;
 import us.mn.state.health.lims.result.action.util.ResultsLoadUtility;
@@ -44,12 +41,18 @@ import us.mn.state.health.lims.samplehuman.dao.SampleHumanDAO;
 import us.mn.state.health.lims.samplehuman.daoimpl.SampleHumanDAOImpl;
 import us.mn.state.health.lims.patient.valueholder.Patient;
 import us.mn.state.health.lims.common.util.StringUtil;
+import us.mn.state.health.lims.labbridge.service.transform.ConfigurableResultValueTransformer;
+import us.mn.state.health.lims.labbridge.service.transform.ResultValueTransformer;
+import us.mn.state.health.lims.labbridge.service.transform.TransformedResult;
 
 /**
  * Service layer that wraps the existing UI logic for updating test results
  * This ensures REST endpoints follow the same business logic as the UI
  */
 public class ResultUpdateService {
+
+    // REST-only transformation hook; defaults to a non-breaking implementation.
+    private final ResultValueTransformer resultValueTransformer = new ConfigurableResultValueTransformer();
 
     public static class ResultUpdateResponse {
         public boolean success;
@@ -114,7 +117,12 @@ public class ResultUpdateService {
                 return new ResultUpdateResponse(false, "Sample not found for analysis");
             }
 
-            // Resolve the appropriate TestResult and normalized value/type based on input
+            // Apply REST-only per-test transformation before resolving value/type.
+            TransformedResult transformed = resultValueTransformer.transform(test, resultValue, resultType);
+            resultValue = transformed.getValue();
+            resultType = transformed.getType();
+
+            // Resolve the appropriate TestResult and normalized value/type based on (possibly transformed) input
             TestResultDAO testResultDAO = new TestResultDAOImpl();
             ResolvedResult rr = resolveTestResultAndValue(test, testResultDAO, resultValue, resultType);
             if (!rr.success) {
