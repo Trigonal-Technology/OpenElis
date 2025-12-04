@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="us.mn.state.health.lims.note.valueholder.Note" table="NOTE" optimistic-lock="version" dynamic-update="true" batch-size="25">
+        <id name="id" type="us.mn.state.health.lims.hibernate.resources.usertype.LIMSStringNumberUserType">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="sequence">
+            	<param name="sequence">note_seq</param>
+            </generator>	
+        </id>
+        <version name="lastupdated" column="LASTUPDATED" type="timestamp" access="field"/>
+
+        <many-to-one name="systemUser" class="us.mn.state.health.lims.systemuser.valueholder.SystemUser" fetch="select" >
+            <column name="SYS_USER_ID" precision="10" scale="0" />
+        </many-to-one>
+        <property name="referenceId" type="us.mn.state.health.lims.hibernate.resources.usertype.LIMSStringNumberUserType">
+            <column name="REFERENCE_ID" precision="22" scale="0" />
+        </property>
+        <property name="referenceTableId" type="us.mn.state.health.lims.hibernate.resources.usertype.LIMSStringNumberUserType" >
+        	<column name="REFERENCE_TABLE" precision="22" scale="0" />
+        </property>
+        <property name="noteType" type="java.lang.String">
+            <column name="NOTE_TYPE" length="1" />
+        </property>
+        <property name="subject" type="java.lang.String">
+            <column name="SUBJECT" length="60" />
+        </property>
+        <property name="text" type="java.lang.String">
+            <column name="TEXT" />
+        </property>
+    </class>
+</hibernate-mapping>
+

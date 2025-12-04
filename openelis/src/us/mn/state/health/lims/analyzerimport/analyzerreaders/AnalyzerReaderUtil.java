@@ -1,0 +1,71 @@
+/*
+* The contents of this file are subject to the Mozilla Public License
+* Version 1.1 (the "License"); you may not use this file except in
+* compliance with the License. You may obtain a copy of the License at
+* http://www.mozilla.org/MPL/ 
+* 
+* Software distributed under the License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific language governing rights and limitations under
+* the License.
+* 
+* The Original Code is OpenELIS code.
+* 
+* Copyright (C) The Minnesota Department of Health.  All Rights Reserved.
+*/
+
+package us.mn.state.health.lims.analyzerimport.analyzerreaders;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+import us.mn.state.health.lims.analysis.dao.AnalysisDAO;
+import us.mn.state.health.lims.analysis.daoimpl.AnalysisDAOImpl;
+import us.mn.state.health.lims.analysis.valueholder.Analysis;
+import us.mn.state.health.lims.analyzerresults.valueholder.AnalyzerResults;
+import us.mn.state.health.lims.result.dao.ResultDAO;
+import us.mn.state.health.lims.result.daoimpl.ResultDAOImpl;
+import us.mn.state.health.lims.result.valueholder.Result;
+import us.mn.state.health.lims.sample.dao.SampleDAO;
+import us.mn.state.health.lims.sample.daoimpl.SampleDAOImpl;
+import us.mn.state.health.lims.sample.valueholder.Sample;
+import us.mn.state.health.lims.statusofsample.util.StatusOfSampleUtil;
+import us.mn.state.health.lims.statusofsample.util.StatusOfSampleUtil.AnalysisStatus;
+
+public class AnalyzerReaderUtil {
+	private SampleDAO sampleDAO = new SampleDAOImpl();
+	private AnalysisDAO analysisDAO = new AnalysisDAOImpl();
+	private ResultDAO resultDAO = new ResultDAOImpl();
+
+	@SuppressWarnings("unchecked")
+	public AnalyzerResults createAnalyzerResultFromDB(AnalyzerResults resultFromAnalyzer) {
+
+		Sample sample = sampleDAO.getSampleByAccessionNumber(resultFromAnalyzer.getAccessionNumber());
+
+		if( sample != null && sample.getId() != null){
+			List<Analysis> analysisList = analysisDAO.getAnalysesBySampleId(sample.getId());
+			String acceptedStatusId = StatusOfSampleUtil.getStatusID(AnalysisStatus.TechnicalAcceptance);
+
+			for(Analysis analysis : analysisList ){
+				if(analysis.getStatusId().equals(acceptedStatusId) && analysis.getTest().getId().equals(resultFromAnalyzer.getTestId())){
+					List<Result> resultList = resultDAO.getResultsByAnalysis(analysis);
+					if( resultList.size() > 0){
+						try {
+							AnalyzerResults resultFromDB = (AnalyzerResults) resultFromAnalyzer.clone();
+							resultFromDB.setResult(resultList.get(resultList.size() - 1 ).getValue());
+							resultFromDB.setCompleteDate(new Timestamp(analysis.getCompletedDate().getTime()));
+							resultFromDB.setReadOnly(true);
+							resultFromDB.setResultType(resultFromAnalyzer.getResultType());
+							return resultFromDB;
+						} catch (CloneNotSupportedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+
+}

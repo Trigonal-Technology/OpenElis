@@ -1,0 +1,1849 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog/1.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog/1.9 http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd">
+    <!--Add change tags here-->
+    <changeSet id="1" author="tw" context="bahmni" runOnChange="true">
+        <comment>Adds Bahmni specific configuration to SiteInfo</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="DATENUM"/>
+            <where>name='acessionFormat'</where>
+        </update>
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="SampleEntryFieldsetOrder"/>
+            <column name="description"
+                    value="Configures the order in which each section appears in the Add Sample Entry form. Eg: value: patient|samples|order"/>
+            <column name="value" value="patient|samples|order"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="2" author="tw" context="bahmni" runOnChange="true">
+        <comment>Change default locale to en-GB</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="en-GB"/>
+            <where>name='default language locale'</where>
+        </update>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="en-GB"/>
+            <where>name='default date locale'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="3" author="tw" context="bahmni" runOnChange="true">
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="bahmni"/>
+            <where>name='setFieldForm'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="4" author="tw" context="bahmni" runOnChange="true">
+        <comment>Create address fields for Bahmni</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="bahmni"/>
+            <where>name='setFieldForm'</where>
+        </update>
+        <delete schemaName="clinlims" tableName="person_address"></delete>
+        <delete schemaName="clinlims" tableName="address_part"></delete>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level1"/>
+            <column name="display_order" value="1"/>
+            <column name="display_key" value="address.level1"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level2"/>
+            <column name="display_order" value="2"/>
+            <column name="display_key" value="address.level2"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level3"/>
+            <column name="display_order" value="3"/>
+            <column name="display_key" value="address.level3"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level4"/>
+            <column name="display_order" value="4"/>
+            <column name="display_key" value="address.level4"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level5"/>
+            <column name="display_order" value="5"/>
+            <column name="display_key" value="address.level5"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="address_part">
+            <column name="id" valueNumeric=" nextVal( 'address_part_seq' ) "/>
+            <column name="part_name" value="level6"/>
+            <column name="display_order" value="6"/>
+            <column name="display_key" value="address.level6"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="5" author="tw" context="bahmni" runOnChange="true">
+        <comment>Add type to address_part table</comment>
+        <addColumn schemaName="clinlims" tableName="address_part">
+            <column name="type" type="character(1)" defaultValue="T">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="6" author="tw" runOnChange="true" context="bahmni">
+        <comment>Set address part type to D for department</comment>
+        <update schemaName="clinlims" tableName="address_part">
+            <column name="type" value="D"/>
+            <where>part_name='department'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="7" author="tw" runOnChange="true" context="bahmni">
+        <comment>Adding changes to support openelis atom feed</comment>
+
+        <createTable schemaName="clinlims" tableName="failed_events">
+            <column name="id" type="numeric(10,0)" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="feed_uri" type="varchar(255)"/>
+            <column name="error_message" type="varchar(4000)"/>
+            <column name="event_id" type="varchar(255)"/>
+            <column name="event_content" type="varchar(4000)"/>
+            <column name="failed_at" type="timestamp(6) without time zone"/>
+        </createTable>
+
+        <createTable schemaName="clinlims" tableName="markers">
+            <column name="id" type="numeric(10,0)" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="feed_uri_for_last_read_entry" type="varchar(250)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="feed_uri" type="varchar(250)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_read_entry_id" type="varchar(250)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable schemaName="clinlims" tableName="external_reference">
+            <column name="id" type="numeric(10,0)" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="item_id" type="numeric(10,0)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="external_id" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="8" author="tw" runOnChange="true" context="bahmni">
+        <addUniqueConstraint
+                columnNames="item_id,type"
+                constraintName="unique_ids"
+                schemaName="clinlims"
+                tableName="external_reference"
+                />
+    </changeSet>
+
+    <changeSet id="9" author="tw" runOnChange="true" context="bahmni">
+        <comment>Stop the schedulers not required for bahmni</comment>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="active" valueBoolean="false"/>
+        </update>
+    </changeSet>
+
+    <changeSet id="10" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-patient"/>
+            <column name="job_name" value="atom-feed-openmrs-patient"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSPatient"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSPatient"/>
+        </insert>
+    </changeSet>
+    <changeSet id="11" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="AdminUser"/>
+            <column name="description" value="Holds the name of the admin user responsible for creating Lab/Panels"/>
+            <column name="value" value="admin"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet id="12" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom feed openerp lab tests "/>
+            <column name="job_name" value="openERPLabTestsFeed"/>
+            <column name="display_key" value="schedule.name.openERPLabTestsFeed"/>
+            <column name="description_key" value="schedule.name.openERPLabTestsFeed"/>
+        </insert>
+        <createTable schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="id" type="numeric(10,0)" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(10)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="varchar(50)"/>
+            <column name="active" type="boolean"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="13" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="false"/>
+            <column name="name" value="UNK"/>
+            <column name="description" value="UNKNOWN"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="GAN"/>
+            <column name="description" value="Ganiyari"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="SEM"/>
+            <column name="description" value="Semariya"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="SIV"/>
+            <column name="description" value="SHIVTARAI"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="BAM"/>
+            <column name="description" value="Bahmni"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="HEALTH_CENTER">
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="CHP"/>
+            <column name="description" value="CHP"/>
+        </insert>
+    </changeSet>
+    <changeSet id="14" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="TEST_SECTION">
+            <column name="id" valueNumeric=" nextval( 'test_section_seq' ) "/>
+            <column name="name" value="New"/>
+            <column name="description" value="Dummy Section"/>
+            <column name="is_external" value="N"/>
+            <column name="is_active" value="N"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="tw" id="15" context="bahmni">
+        <createTable tableName="event_records" schemaName="clinlims">
+            <column name="id" type="serial">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="uuid" type="varchar(40)"/>
+            <column name="title" type="varchar(255)"/>
+            <column name="timestamp" type="timestamp" defaultValueDate="CURRENT_TIMESTAMP(6)"/>
+            <column name="uri" type="varchar(255)"/>
+            <!-- TODO: Change to CLOB -->
+            <column name="object" type="varchar(1000)"/>
+        </createTable>
+        <createTable tableName="chunking_history" schemaName="clinlims">
+            <column name="id" type="serial">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="chunk_length" type="BIGINT"/>
+            <column name="start" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="16" author="tw" context="bahmni">
+        <insert tableName="chunking_history" schemaName="clinlims">
+            <column name="chunk_length" valueNumeric="5"></column>
+            <column name="start" valueNumeric="1"></column>
+        </insert>
+    </changeSet>
+    <changeSet id="17" author="tw" context="bahmni">
+        <addColumn tableName="event_records" schemaName="clinlims">
+            <column name="category" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="18" author="tw" context="bahmni">
+        <addColumn tableName="patient" schemaName="clinlims">
+            <column name="health_center_id" type="integer"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="19" author="tw" context="bahmni">
+        <addForeignKeyConstraint baseColumnNames="health_center_id"
+                                 baseTableName="patient"
+                                 constraintName="fk_patient_health_center"
+                                 onDelete="CASCADE"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="HEALTH_CENTER"/>
+    </changeSet>
+    <changeSet id="20" author="tw" context="bahmni">
+        <dropNotNullConstraint columnDataType="varchar(250)"
+                               columnName="last_read_entry_id"
+                               schemaName="clinlims"
+                               tableName="markers"/>
+        <dropNotNullConstraint columnDataType="varchar(250)"
+                               columnName="feed_uri_for_last_read_entry"
+                               schemaName="clinlims"
+                               tableName="markers"/>
+        <insert tableName="markers" schemaName="clinlims">
+            <column name="feed_uri_for_last_read_entry"
+                    valueNumeric="'http://localhost:8080/openmrs/ws/atomfeed/patient/1'"/>
+            <column name="feed_uri" valueNumeric="'http://localhost:8080/openmrs/ws/atomfeed/patient/recent'"/>
+        </insert>
+    </changeSet>
+    <changeSet id="21" author="tw">
+        <comment>Add new table sample_source and link to sample table</comment>
+        <createTable tableName="sample_source" schemaName="clinlims">
+            <column name="id" type="integer" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(20)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="varchar(50)"/>
+            <column name="active" type="boolean"/>
+        </createTable>
+        <addColumn tableName="sample" schemaName="clinlims">
+            <column name="sample_source_id" type="integer"></column>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="sample_source_id"
+                                 baseTableName="sample"
+                                 constraintName="fk_sample_sample_source"
+                                 onUpdate="RESTRICT"
+                                 referencedColumnNames="id"
+                                 referencedTableName="sample_source"/>
+    </changeSet>
+    <changeSet id="22" author="tw" context="bahmni">
+        <comment>Data required for sample_source</comment>
+        <insert tableName="sample_source" schemaName="clinlims">
+            <column name="id" valueNumeric=" nextval( 'sample_source_id_seq' ) "/>
+            <column name="name" value="IPD"/>
+            <column name="description" value="InPatient Department"></column>
+            <column name="active" type="boolean" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sample_source" schemaName="clinlims">
+            <column name="id" valueNumeric=" nextval( 'sample_source_id_seq' ) "/>
+            <column name="name" value="OPD"/>
+            <column name="description" value="OutPatient Department"></column>
+            <column name="active" type="boolean" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sample_source" schemaName="clinlims">
+            <column name="id" valueNumeric=" nextval( 'sample_source_id_seq' ) "/>
+            <column name="name" value="Emergency"/>
+            <column name="description" value="Emergency"></column>
+            <column name="active" type="boolean" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sample_source" schemaName="clinlims">
+            <column name="id" valueNumeric=" nextval( 'sample_source_id_seq' ) "/>
+            <column name="name" value="Sub Center"/>
+            <column name="description" value="Sub Center"></column>
+            <column name="active" type="boolean" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sample_source" schemaName="clinlims">
+            <column name="id" valueNumeric=" nextval( 'sample_source_id_seq' ) "/>
+            <column name="name" value="Community Program"/>
+            <column name="description" value="Community Program"></column>
+            <column name="active" type="boolean" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+    <changeSet id="23" author="tw">
+        <comment>Add new column to sample_source for ordering the dropdown display</comment>
+        <addColumn tableName="sample_source" schemaName="clinlims">
+            <column name="display_order" type="integer"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="24" author="tw" context="bahmni">
+        <comment>setting values for ordering the sample_sources</comment>
+        <update schemaName="clinlims" tableName="sample_source">
+            <column name="display_order" value="1"/>
+            <where>name='OPD'</where>
+        </update>
+        <update schemaName="clinlims" tableName="sample_source">
+            <column name="display_order" value="2"/>
+            <where>name='IPD'</where>
+        </update>
+        <update schemaName="clinlims" tableName="sample_source">
+            <column name="display_order" value="3"/>
+            <where>name='Emergency'</where>
+        </update>
+        <update schemaName="clinlims" tableName="sample_source">
+            <column name="display_order" value="4"/>
+            <where>name='Sub Center'</where>
+        </update>
+        <update schemaName="clinlims" tableName="sample_source">
+            <column name="display_order" value="5"/>
+            <where>name='Community Program'</where>
+        </update>
+    </changeSet>
+    <changeSet author="tw" id="25" context="bahmni">
+        <comment>Adds the menu items for Validate 'All Test Sections'</comment>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) "/>
+            <column name="parent_id"
+                    valueNumeric=" ( select id from clinlims.menu where element_id = 'menu_resultvalidation' ) "/>
+            <column name="presentation_order" valueNumeric="200"/>
+            <column name="element_id" value="menu_resultvalidation_All"/>
+            <column name="action_url"
+                    value="/ResultValidation.do?type=All+Sections&amp;test="/>
+            <column name="display_key"
+                    value="banner.menu.resultvalidation.AllSections"/>
+            <column name="tool_tip_key"
+                    value="banner.menu.resultvalidation.AllSections"/>
+        </insert>
+    </changeSet>
+    <changeSet id="26" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="never"/>
+            <where>job_name='sendMalariaSurviellanceReport'</where>
+        </update>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="never"/>
+            <where>job_name='sendSiteIndicators'</where>
+        </update>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="job_name" value="atom-feed-openerp-test"/>
+            <column name="name" value="atom-feed-openerp-test"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenERPTest"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenERPTest"/>
+            <column name="cron_statement" value="0 0/1 * * * ?"/>
+            <where>job_name='openERPLabTestsFeed'</where>
+        </update>
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openerp-test-failed"/>
+            <column name="job_name" value="atom-feed-openerp-test-failed"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenERPTest.failed"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenERPTest.failed"/>
+            <column name="cron_statement" value="0 0/1 * * * ?"/>
+        </insert>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="0/5 * * * * ?"/>
+            <where>name='atom-feed-openmrs-patient'</where>
+        </update>
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-patient-failed"/>
+            <column name="job_name" value="atom-feed-openmrs-patient-failed"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSPatient.failed"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSPatient.failed"/>
+            <column name="cron_statement" value="0 0/1 * * * ?"/>
+        </insert>
+        <addColumn tableName="failed_events" schemaName="clinlims">
+            <column name="error_hash_code" type="int"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="tw" id="27" context="bahmni">
+        <comment>Add primary relative</comment>
+        <insert schemaName="clinlims" tableName="patient_identity_type">
+            <column name="id" valueNumeric=" nextval( 'patient_identity_type_seq' ) "/>
+            <column name="identity_type" value="PRIMARYRELATIVE"/>
+            <column name="description" value="Father's/Husband's name"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet author="tw" id="28" context="bahmni">
+        <comment>Make validation of results compulsory</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="true"/>
+            <where>name='validate all results'</where>
+        </update>
+    </changeSet>
+    <changeSet author="tw" id="29" context="bahmni">
+        <comment>Add isActive column to Person</comment>
+        <addColumn tableName="person" schemaName="clinlims">
+            <column name="is_active" type="boolean" defaultValue="true"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="tw" id="30" context="bahmni">
+        <comment>Adds referral types</comment>
+        <insert schemaName="clinlims" tableName="referral_type">
+            <column name="id" valueNumeric=" nextval( 'referral_type_seq' ) "/>
+            <column name="name" value="Confirmation"/>
+            <column name="description" value="Sent out to confirm result"/>
+            <column name="display_key" value="referral.type.confirmation"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet author="tw" id="31" context="bahmni">
+        <comment>Adding labDashboard menu</comment>
+        <update schemaName="clinlims" tableName="menu">
+            <column name="presentation_order" valueNumeric="presentation_order+1"/>
+            <where>parent_id is null and presentation_order > 1</where>
+        </update>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextVal( 'menu_seq' ) "/>
+            <column name="presentation_order" valueNumeric="2"/>
+            <column name="element_id" value="menu_labDashboard"/>
+            <column name="action_url" value="/LabDashboard.do"/>
+            <column name="display_key" value="banner.menu.labdashboard"/>
+            <column name="tool_tip_key" value="tooltip.banner.menu.labdashboard"/>
+            <column name="new_window" value="f"/>
+        </insert>
+    </changeSet>
+    <changeSet author="tw" id="32" context="bahmni">
+        <comment>Adds uuid for the patient</comment>
+        <addColumn tableName="patient" schemaName="clinlims">
+            <column name="uuid" type="varchar(100)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="tw" id="33" context="bahmni">
+        <comment>Change frequency of patient runs</comment>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+            <where>name='atom-feed-openmrs-patient'</where>
+        </update>
+    </changeSet>
+    <changeSet author="tw" id="34" context="bahmni">
+        <comment>Sets the default for showing the invalid results icon to true</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="true"/>
+            <where>name = 'showValidationFailureIcon'</where>
+        </update>
+    </changeSet>
+    <!--<changeSet author="tw" id="30" context="bahmni">-->
+    <!--<comment>Add referral reasons to DB</comment>-->
+    <!--<loadData file="Bahmni/Bahmni_Referral_Reasons.csv" schemaName="clinlims" tableName="referral_reason">-->
+    <!--<column name="id" header="id" type="NUMERIC"/>-->
+    <!--<column name="name" header="name" type="STRING"/>-->
+    <!--<column name="description" header="description" type="STRING"/>-->
+    <!--<column name="display_key" header="display_key" type="STRING"/>-->
+    <!--<column name="lastupdated" header="lastUpdated" type="DATE"/>-->
+    <!--</loadData>-->
+    <!--</changeSet>-->
+    <changeSet author="tw" id="35" context="bahmni">
+        <insert schemaName="clinlims" tableName="status_of_sample">
+            <column name="id" valueNumeric=" nextval( 'status_of_sample_seq' ) "/>
+            <column name="code" value="1"/>
+            <column name="lastupdated" valueDate='now()'/>
+            <column name="status_type" value="ANALYSIS"/>
+            <column name="name" value="Technical Acceptance RO"/>
+            <column name="description"
+                    value="The results of the test were accepted by technician as being valid for referred out test"/>
+            <column name="display_key" value="status.test.referred.out.tech.accepted"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="status_of_sample">
+            <column name="id" valueNumeric=" nextval( 'status_of_sample_seq' ) "/>
+            <column name="code" value="1"/>
+            <column name="lastupdated" valueDate='now()'/>
+            <column name="status_type" value="ANALYSIS"/>
+            <column name="name" value="Finalized RO"/>
+            <column name="description" value="The results of the analysis are final for referred out test"/>
+            <column name="display_key" value="status.test.referred.out.valid"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="marks" id="36" context="bahmni">
+        <comment>Adds the upload menu item for Bahmni</comment>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) "/>
+            <column name="presentation_order" valueNumeric="10"/>
+            <column name="action_url" value="/Upload.do"/>
+            <column name="display_key" value="banner.menu.upload"/>
+            <column name="element_id" value="blah" />
+            <column name="tool_tip_key" value="banner.menu.upload"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="tw" id="37" context="bahmni">
+        <comment>Validation fails if active inventory items dont have receipt. Inactivating the inventory items</comment>
+            <update schemaName="clinlims" tableName="inventory_item">
+            <column name="is_active" value="N"/>
+        </update>
+    </changeSet>
+
+    <changeSet author="tw" id="38" context="bahmni">
+        <comment>Remove haiti test section menus for Test Results and Validation</comment>
+            <delete schemaName="clinlims" tableName="menu">
+                <where>element_id like '%menu_resultvalidation%' and element_id != 'menu_resultvalidation_All' and element_id !='menu_resultvalidation'</where>
+            </delete>
+            <delete schemaName="clinlims" tableName="menu">
+                <where>element_id like '%menu_results_%' and element_id !='menu_results_patient' and element_id != 'menu_results_accession' and element_id != 'menu_results_status' and element_id != 'menu_results_search'</where>
+            </delete>
+    </changeSet>
+
+    <changeSet author="tw" id="39" context="bahmni">
+        <comment>Removing menus not needed for Bahmni</comment>
+            <delete schemaName="clinlims" tableName="menu">
+                <where>element_id = 'menu_inventory'</where>
+            </delete>
+            <delete schemaName="clinlims" tableName="menu">
+                <where>element_id like '%menu_workplan%'</where>
+            </delete>
+            <delete schemaName="clinlims" tableName="menu">
+                <where>element_id like '%menu_reports_aggregate%'</where>
+            </delete>
+    </changeSet>
+
+    <changeSet author="tw" id="40" context="bahmni">
+        <comment>Adds the referredOut menu item for Bahmni</comment>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) " />
+            <column name="parent_id" valueNumeric=" ( select id from clinlims.menu where element_id = 'menu_results' ) " />
+            <column name="presentation_order" valueNumeric="2" />
+            <column name="element_id" value="menu_results_referredOut" />
+            <column name="action_url" value="/ReferredOutTests.do"/>
+            <column name="display_key" value="banner.menu.referredOut" />
+            <column name="tool_tip_key" value="tooltip.banner.menu.referredOut" />
+        </insert>
+    </changeSet>
+
+     <changeSet author="tw" id="41" context="bahmni">
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) " />
+            <column name="parent_id"
+                valueNumeric=" ( select id from clinlims.menu where element_id = 'menu_reports' ) " />
+            <column name="presentation_order" valueNumeric="2" />
+            <column name="element_id" value="menu_reports_aggregate" />
+            <column name="display_key" value="openreports.aggregate.title" />
+            <column name="tool_tip_key" value="tooltip.openreports.aggregate.title" />
+        </insert>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) " />
+            <column name="parent_id"
+                valueNumeric=" ( select id from clinlims.menu where element_id = 'menu_reports_aggregate' ) " />
+            <column name="presentation_order" valueNumeric="2" />
+            <column name="element_id" value="menu_reports_aggregate_all" />
+            <column name="action_url"
+                value="/Report.do?type=indicator&amp;report=indicatorHaitiClinicalAllTests" />
+            <column name="display_key" value="openreports.all.tests.aggregate" />
+            <column name="tool_tip_key" value="tooltip.openreports.all.tests.aggregate" />
+        </insert>
+    </changeSet>
+    <changeSet author="tw" id="42" context="bahmni">
+        <insert schemaName="clinlims" tableName="status_of_sample">
+            <column name="id" valueNumeric=" nextval( 'status_of_sample_seq' ) "/>
+            <column name="code" value="1"/>
+            <column name="lastupdated" valueDate='now()'/>
+            <column name="status_type" value="ANALYSIS"/>
+            <column name="name" value="Biologist Rejection RO"/>
+            <column name="description"
+                    value="The Biologist did not accept this result as valid for referred out test"/>
+            <column name="display_key" value="status.test.referred.out.biologist.reject"/>
+        </insert>
+    </changeSet>
+    <changeSet id="43" author="tw" context="bahmni">
+        <comment>Remove logo in reports</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="false"/>
+            <where>name='useLogoInReport'</where>
+        </update>
+    </changeSet>
+    <changeSet id="44" author="tw" context="bahmni">
+        <createTable tableName="import_status" schemaName="clinlims">
+            <column name="id" type="numeric(10,0)" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="import_status_pk" nullable="false" />
+            </column>
+
+            <column name="original_file_name" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="saved_file_name" type="varchar(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="error_file_name" type="varchar(100)"/>
+            <column name="type" type="varchar(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(25)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="successful_records" type="numeric(6)"/>
+            <column name="failed_records" type="numeric(6)"/>
+            <column name="stage_name" type="varchar(10)" />
+            <column name="stack_trace" type="varchar(200)" />
+
+            <column name="uploaded_by" type="varchar(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_time" type="timestamp"/>
+            <column name="end_time" type="timestamp"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="45" author="tw" context="bahmni">
+        <dropColumn columnName="stack_trace" schemaName="clinlims" tableName="import_status"/>
+        <addColumn schemaName="clinlims" tableName="import_status">
+            <column name="stack_trace" type="text" />
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="46" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value=""/>
+            <where>name='stringContext'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="47" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="uploadedFilesDirectory"/>
+            <column name="description"
+                    value="Configures the directory where the uploaded files are saved."/>
+            <column name="value" value="/uploaded-files/elis/"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="parentOfUploadedFilesDirectory"/>
+            <column name="description"
+                    value="Configures the parent directory of uploaded files directory."/>
+            <column name="value" value="/home/jss"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="tw" id="48" context="bahmni">
+        <comment>Set site name</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="Jan Swasthya Sahyog"/>
+            <where>name='SiteName'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="49" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="durationInDaysForUploadStatuses"/>
+            <column name="description"
+                    value="Configures the past number of days for which we display the upload data on Upload Dashboard."/>
+            <column name="value" value="30"/>
+            <column name="value_type" value="int"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet id="50" author="tw" context="bahmni">
+        <comment>Adjust modules and roles for the new pages</comment>
+        <insert schemaName="clinlims" tableName="system_module">
+            <column name="id" valueNumeric=" nextVal( 'system_module_seq' ) "/>
+            <column name="name" value="Dashboard"/>
+            <column name="description" value="Lab Dashboard"/>
+            <column name="has_select_flag" value="N"/>
+            <column name="has_add_flag" value="N"/>
+            <column name="has_update_flag" value="N"/>
+            <column name="has_delete_flag" value="N"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="system_module">
+            <column name="id" valueNumeric=" nextVal( 'system_module_seq' ) "/>
+            <column name="name" value="Upload"/>
+            <column name="description" value="Upload"/>
+            <column name="has_select_flag" value="N"/>
+            <column name="has_add_flag" value="N"/>
+            <column name="has_update_flag" value="N"/>
+            <column name="has_delete_flag" value="N"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="system_role">
+            <column name="id" valueNumeric=" nextVal( 'system_role_seq' ) "/>
+            <column name="name" value="LabDashboard"/>
+            <column name="description" value="View Lab Dashboard"/>
+            <column name="is_grouping_role" value="f"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="editable" valueBoolean="false"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="system_role">
+            <column name="id" valueNumeric=" nextVal( 'system_role_seq' ) "/>
+            <column name="name" value="Upload"/>
+            <column name="description" value="csv upload facility"/>
+            <column name="is_grouping_role" value="f"/>
+            <column name="active" valueBoolean="true"/>
+            <column name="editable" valueBoolean="false"/>
+        </insert>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            insert into system_role_module 
+                (id, has_select, has_add, has_update, has_delete, system_role_id, system_module_id)
+            select nextval( 'system_user_module_seq' ), 'Y', 'Y', 'Y', 'Y', r.id, m.id 
+                from system_role r, system_module m 
+                where trim(r.name) = 'LabDashboard' and 
+                    m.name = 'LabDashboard'
+        </sql>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            insert into system_role_module 
+                (id, has_select, has_add, has_update, has_delete, system_role_id, system_module_id)
+            select nextval( 'system_user_module_seq' ), 'Y', 'Y', 'Y', 'Y', r.id, m.id 
+                from system_role r, system_module m 
+                where trim(r.name) = 'Upload' and 
+                    m.name = 'Upload'
+        </sql>
+    </changeSet>
+    <changeSet id="51" author="tw" context="bahmni">
+        <comment>Increase the column size for panel_item </comment>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            alter table "panel_item" alter column "test_local_abbrev" type varchar(100);
+        </sql>
+    </changeSet>
+    <changeSet id="52" author="tw" context="bahmni">
+        <comment>Fix changeset 50</comment>
+        <update schemaName="clinlims" tableName="system_module">
+            <column name="name" value="LabDashboard"/>
+            <where>name='Dashboard'</where>
+        </update>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            insert into system_role_module 
+                (id, has_select, has_add, has_update, has_delete, system_role_id, system_module_id)
+            select nextval( 'system_user_module_seq' ), 'Y', 'Y', 'Y', 'Y', r.id, m.id 
+                from system_role r, system_module m 
+                where trim(r.name) = 'LabDashboard' and 
+                    m.name = 'LabDashboard'
+        </sql>
+    </changeSet>
+    <changeSet id="53" author="tw" context="bahmni">
+        <comment>Add module for validation of all sections</comment>
+        <insert schemaName="clinlims" tableName="system_module">
+            <column name="id" valueNumeric=" nextVal( 'system_module_seq' ) "/>
+            <column name="name" value="ResultValidation:All Sections"/>
+            <column name="description" value="Validation of all sections"/>
+            <column name="has_select_flag" value="N"/>
+            <column name="has_add_flag" value="N"/>
+            <column name="has_update_flag" value="N"/>
+            <column name="has_delete_flag" value="N"/>
+        </insert>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            insert into system_role_module 
+                (id, has_select, has_add, has_update, has_delete, system_role_id, system_module_id)
+            select nextval( 'system_user_module_seq' ), 'Y', 'Y', 'Y', 'Y', r.id, m.id 
+                from system_role r, system_module m 
+                where trim(r.name) = 'Validation' and 
+                    m.name = 'ResultValidation:All Sections'
+        </sql>
+    </changeSet>
+    <changeSet id="54" author="tw" context="bahmni">
+        <comment>Add Bahmni Lab Dictionary category</comment>
+        <insert schemaName="clinlims" tableName="dictionary_category">
+            <column name="id" valueNumeric=" nextVal( 'dictionary_category_seq' ) "/>
+            <column name="name" value="Bahmni Lab"/>
+            <column name="description" value="Bahmni Lab"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+     <changeSet id="55" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="menu">
+            <column name="presentation_order" value="1"/>
+            <where>element_id='menu_results_search'</where>
+        </update>
+        <update schemaName="clinlims" tableName="menu">
+            <column name="presentation_order" value="3"/>
+            <where>element_id='menu_results_referredOut'</where>
+        </update>
+        <insert schemaName="clinlims" tableName="menu">
+            <column name="id" valueNumeric=" nextval( 'menu_seq' ) " />
+            <column name="parent_id"
+                valueNumeric=" ( select id from clinlims.menu where element_id = 'menu_results' ) " />
+            <column name="presentation_order" valueNumeric="2" />
+            <column name="element_id" value="menu_results_logbook" />
+            <column name="display_key" value="banner.menu.results.logbook" />
+            <column name="tool_tip_key" value="tooltip.banner.menu.results.logbook" />
+        </insert>
+    </changeSet>    
+    <changeSet id="56" author="tw" context="bahmni">
+        <comment>Increase the column size for result and notes column</comment>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            ALTER TABLE "result" ALTER COLUMN "value" type text;
+        </sql>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            ALTER TABLE "note" ALTER COLUMN "text" type text;
+        </sql>
+    </changeSet>
+
+    <changeSet id="57" author="tw" runOnChange="true" context="bahmni">
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="resultsPageSize"/>
+            <column name="description"
+                    value="Configures the number tests per page for result entry"/>
+            <column name="value" value="30"/>
+            <column name="value_type" value="int"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="58" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="resultsValidationPageSize"/>
+            <column name="description"
+                    value="Configures the number tests per page for result validation"/>
+            <column name="value" value="30"/>
+            <column name="value_type" value="int"/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet id="59" author="tw" context="bahmni">
+        <comment>Add health center to list of pages</comment>
+        <insert schemaName="clinlims" tableName="system_module">
+            <column name="id" valueNumeric=" nextVal( 'system_module_seq' ) "/>
+            <column name="name" value="HealthCenter"/>
+            <column name="description" value="HealthCenter ajax page"/>
+            <column name="has_select_flag" value="N"/>
+            <column name="has_add_flag" value="N"/>
+            <column name="has_update_flag" value="N"/>
+            <column name="has_delete_flag" value="N"/>
+        </insert>
+        <sql endDelimiter=";\n" splitStatements="true" stripComments="true">
+            insert into system_role_module 
+                (id, has_select, has_add, has_update, has_delete, system_role_id, system_module_id)
+            select nextval( 'system_user_module_seq' ), 'Y', 'Y', 'Y', 'Y', r.id, m.id 
+                from system_role r, system_module m 
+                where trim(r.name) = 'Intake' and 
+                    m.name = 'HealthCenter'
+        </sql>
+    </changeSet>
+
+    <changeSet id="rel3-57" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-encounter"/>
+            <column name="job_name" value="atom-feed-openmrs-encounter"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSEncounter"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSEncounter"/>
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-encounter-failed"/>
+            <column name="job_name" value="atom-feed-openmrs-encounter-failed"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSEncounter.failed"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSEncounter.failed"/>
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="rel3-58" author="tw" context="bahmni">
+        <comment>Adds uuid for the sample</comment>
+        <addColumn tableName="sample" schemaName="clinlims">
+            <column name="uuid" type="varchar(100)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="60" author="tw" context="bahmni" runOnChange="true">
+        <comment>Remove all report senders</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="false"/>
+            <where>name='resultReporting'</where>
+        </update>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="false"/>
+            <where>name='malariaCaseReport'</where>
+        </update>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="false"/>
+            <where>name='testUsageReporting'</where>
+        </update>
+    </changeSet>
+    <changeSet id="61" author="tw" context="bahmni">
+        <modifyColumn tableName="import_status">
+            <column name="original_file_name" type="text" />
+            <column name="saved_file_name" type="text" />
+            <column name="error_file_name" type="text" />
+        </modifyColumn>
+    </changeSet>
+    <changeSet id="62" author="tw" context="bahmni">
+        <comment>Add new column to Health Center</comment>
+        <addColumn tableName="health_center" schemaName="clinlims">
+            <column name="allow_patient_creation" type="boolean" valueBoolean="true"/>
+        </addColumn>
+        <update schemaName="clinlims" tableName="health_center">
+            <column name="allow_patient_creation" value="false"/>
+            <where>name IN ('SEM','GAN','SIV','BAM')</where>
+        </update>
+    </changeSet>
+    <changeSet id="63" author="tw" context="bahmni">
+        <comment>Add Abnormal Column to Test Result</comment>
+        <addColumn tableName="test_result" schemaName="clinlims">
+            <column name="abnormal" type="boolean"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="64" author="tw" context="bahmni">
+        <comment>Add Abnormal Column to Result</comment>
+        <addColumn tableName="result" schemaName="clinlims">
+            <column name="abnormal" type="boolean"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="65" author="tw" context="bahmni">
+        <addDefaultValue tableName="result" columnName="abnormal" schemaName="clinlims"  defaultValueBoolean="false" />
+    </changeSet>
+    <changeSet id="66" author="tw" context="bahmni">
+        <addDefaultValue tableName="test_result" columnName="abnormal" schemaName="clinlims"  defaultValueBoolean="false" />
+    </changeSet>
+    <changeSet id="67" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="test_result">
+            <column name="abnormal" value="false"/>
+        </update>
+    </changeSet>
+    <changeSet id="68" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="result">
+            <column name="abnormal" value="false"/>
+        </update>
+    </changeSet>
+    <changeSet id="69" author="tw" context="bahmni">
+        <update schemaName="clinlims" tableName="test_result">
+            <column name="lastupdated" valueDate="now()"/>
+        </update>
+    </changeSet>
+	<changeSet id="70" author="ict4h" context="bahmni">
+       	<createTable tableName="event_records_offset_marker" schemaName="clinlims">
+	       <column name="id" type="int" autoIncrement="true">
+	           <constraints nullable="false" primaryKey="true"/>
+	       </column>
+	       <column name="event_id" type="int"/>
+	       <column name="event_count" type="int"/>
+	       <column name="category" type="varchar(255)"/>
+	   </createTable>
+	</changeSet>
+    <changeSet id="71" author="ict4h" context="bahmni">
+        <addColumn tableName="failed_events" schemaName="clinlims">
+            <column name="title" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="72" author="tw" context="bahmni">
+        <comment>Fix changeset 50</comment>
+        <update schemaName="clinlims" tableName="failed_events">
+            <column name="title" value="patient"/>
+            <where>title is null</where>
+        </update>
+    </changeSet>
+    <changeSet id="73" author="tw" context="bahmni">
+        <comment>Ensure uuid present in sample table</comment>
+        <sql>
+            update clinlims.sample set uuid = uuid_generate_v4() where uuid is null;
+        </sql>
+    </changeSet>
+    <changeSet id="74" author="ict4h" context="bahmni">
+        <addColumn tableName="test_section" schemaName="clinlims">
+            <column name="uuid" type="varchar(40)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="75" author="tw" context="bahmni">
+        <comment>Ensure uuid present in test_section table</comment>
+        <sql>
+            update clinlims.test_section set uuid = uuid_generate_v4() where uuid is null;
+        </sql>
+    </changeSet>
+    <changeSet id="76" author="ict4h" context="bahmni">
+        <addColumn tableName="unit_of_measure" schemaName="clinlims">
+            <column name="uuid" type="varchar(40)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="77" author="tw" context="bahmni">
+        <comment>Ensure uuid present in unit_of_measure table</comment>
+        <sql>
+            update clinlims.unit_of_measure set uuid = uuid_generate_v4() where uuid is null;
+        </sql>
+    </changeSet>
+    <changeSet id="78" author="ict4h" context="bahmni">
+        <addColumn tableName="type_of_sample" schemaName="clinlims">
+            <column name="uuid" type="varchar(40)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="79" author="tw" context="bahmni">
+        <comment>Ensure uuid present in type_of_sample table</comment>
+        <sql>
+            update clinlims.type_of_sample set uuid = uuid_generate_v4() where uuid is null;
+        </sql>
+    </changeSet>
+    <changeSet id="80" author="tw" context="bahmni">
+        <comment>Add event records for existing accession</comment>
+        <sql>
+            INSERT INTO event_records(uuid,title,timestamp,object,category)
+            SELECT uuid_generate_v4(), 'accession', now(), concat('/openelis/ws/rest/accession/', uuid), 'patient' 
+            FROM sample;
+        </sql>
+    </changeSet>
+
+    <changeSet id="81" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-referencedata"/>
+            <column name="job_name" value="atom-feed-referencedata"/>
+            <column name="display_key" value="schedule.name.atomFeedReferenceData"/>
+            <column name="description_key" value="schedule.name.atomFeedReferenceData"/>
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-referencedata-failed"/>
+            <column name="job_name" value="atom-feed-referencedata-failed"/>
+            <column name="display_key" value="schedule.name.atomFeedReferenceData.failed"/>
+            <column name="description_key" value="schedule.name.atomFeedReferenceDatafailed"/>
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="82" author="tw" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-events-offset-marker"/>
+            <column name="job_name" value="atom-feed-events-offset-marker"/>
+            <column name="display_key" value="schedule.name.atomFeedEventsOffsetMarker"/>
+            <column name="description_key" value="schedule.name.atomFeedEventsOffsetMarker"/>
+            <column name="cron_statement" value="0/15 * * * * ?"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="83" author="tw" context="bahmni">
+        <delete schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <where>job_name in ('atom-feed-openerp-test', 'atom-feed-openerp-test-failed')</where>
+        </delete>
+    </changeSet>
+    <changeSet id="84" author="tw" context="bahmni">
+        <comment>Set system user id from non_user_name</comment>
+        <sql>
+            update result_signature as rs 
+            set system_user_id = su.id 
+            from system_user su 
+            where rs.non_user_name = concat(su.first_name, ' ', su.last_name) 
+                and rs.system_user_id is null;
+        </sql>
+    </changeSet>
+    <changeSet id="85" author="tw" context="bahmni">
+        <comment>Remove all event records incorrectly created with category result</comment>
+        <sql>
+            delete from event_records where category = 'result';
+        </sql>
+    </changeSet>
+
+    <changeSet id="86" author="Banka" context="bahmni">
+        <comment>Add unique constraint for uuid in patient</comment>
+        <addUniqueConstraint
+            columnNames="uuid"
+            schemaName="clinlims"
+            tableName="patient"
+            constraintName="unique_uuid_constraint"/>
+    </changeSet>
+    <changeSet id="87" author="arathy" context="bahmni" runOnChange="true">
+        <comment>Adding site information for logo image name</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" valueBoolean="true"/>
+            <where>name='useLogoInReport'</where>
+        </update>
+    </changeSet>
+    <changeSet id="88" author="arathy" context="bahmni" runOnChange="true">
+        <comment>Changing value_type of additional info</comment>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value_type" value="text"/>
+            <where>name='additional site info'</where>
+        </update>
+    </changeSet>
+    <changeSet id="89" author="rohan" context="bahmni" runOnChange="true">
+        <comment>Change duplicate unit of measures</comment>
+        <sql>
+            update test set uom_id=(select id from unit_of_measure where name='/hPF') where uom_id=(select id from unit_of_measure where name='/hpf');
+            update test set uom_id=(select id from unit_of_measure where name='Iu/ml') where uom_id=(select id from unit_of_measure where name='iU/ml');
+            update test set uom_id=(select id from unit_of_measure where name='Iu/ml') where description='AFP';
+            update test set uom_id=(select id from unit_of_measure where name='u/ml') where description='B HCG';
+            update test set uom_id=(select id from unit_of_measure where name='u/ml') where description='CA-125';
+        </sql>
+    </changeSet>
+    <changeSet id="90" author="rohan" context="bahmni" runOnChange="true">
+        <comment>Remove duplicate unit of measures</comment>
+        <delete schemaName="clinlims" tableName="unit_of_measure">
+                <where>name='/hpf'</where>
+        </delete>
+        <delete schemaName="clinlims" tableName="unit_of_measure">
+                <where>name='iU/ml'</where>
+        </delete>
+        <delete schemaName="clinlims" tableName="unit_of_measure">
+                <where>name='u/mm'</where>
+        </delete>
+        <delete schemaName="clinlims" tableName="unit_of_measure">
+                <where>name='U/MM'</where>
+        </delete>
+    </changeSet>
+    <changeSet id="91" author="Neha" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select last_value from gender_seq;
+            </sqlCheck>
+        </preConditions>
+        <comment>Update gender_seq to the latest value</comment>
+        <sql>
+            alter sequence gender_seq restart with 147;
+        </sql>
+    </changeSet>
+    <changeSet id="92" author="Rohan,Neha" context="bahmni">
+        <comment>Add the uploaded_file_name column to the result table</comment>
+        <addColumn schemaName="clinlims" tableName="result">
+            <column name="uploaded_file_name" type="varchar(500)"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="93" author="Rohan,Neha" context="bahmni">
+        <comment>Add uploaded results directory path in site information</comment>
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextVal( 'site_information_seq' ) "/>
+            <column name="name" value="uploadedResultsDirectory"/>
+            <column name="description"
+                    value="Contains all files uploaded against results"/>
+            <column name="value" value="/uploaded_results/"/>
+            <column name="lastupdated" valueDate=" now() "/>
+            <column name="value_type" value="text"/>
+        </insert>
+    </changeSet>
+    <changeSet id="94" author="Arathy" context="bahmni">
+        <comment>Add result limit id column to the result table</comment>
+        <addColumn schemaName="clinlims" tableName="result">
+            <column name="result_limit_id" type="numeric"></column>
+        </addColumn>
+    </changeSet>
+    <changeSet id="95" author="Bharti,Arathy" context="bahmni">
+				<preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+			                SELECT COUNT(*) FROM gender where gender_type = 'O';
+			      </sqlCheck>
+				</preConditions>
+        <comment>Adding Hospital name and address</comment>
+        <sql>
+          		insert into gender (id, gender_type, description, name_key) values ((select nextval('gender_seq')), 'O', 'Other', 'gender.other');
+        </sql>
+    </changeSet>
+    <changeSet id="96" author="Bharti, Arathy" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select last_value from gender_seq;
+            </sqlCheck>
+        </preConditions>
+        <comment>Update gender_seq to the latest value</comment>
+        <sql>
+            alter sequence gender_seq restart with 148;
+        </sql>
+    </changeSet>
+    <changeSet id="97" author="Chethan, Mihir" runOnChange="false" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-lab"/>
+            <column name="job_name" value="atom-feed-openmrs-lab"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSLab"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSLab"/>
+            <column name="cron_statement" value="0/5 * * * * ?"/>
+        </insert>
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-openmrs-lab-failed"/>
+            <column name="job_name" value="atom-feed-openmrs-lab-failed"/>
+            <column name="display_key" value="schedule.name.atomFeedOpenMRSLab.failed"/>
+            <column name="description_key" value="schedule.name.atomFeedOpenMRSLab.failed"/>
+            <column name="cron_statement" value="0 0/1 * * * ?"/>
+        </insert>
+    </changeSet>
+    <changeSet id="98" author="Mihir" context="bahmni">
+        <preConditions onFail="CONTINUE">
+            <sqlCheck expectedResult="2">
+                select count(*) from quartz_cron_scheduler where name in
+                 ('atom-feed-openmrs-lab', 'atom-feed-openmrs-lab-failed');
+            </sqlCheck>
+        </preConditions>
+        <comment>Update cron_statement to correct cron schedule</comment>
+        <sql>
+            update quartz_cron_scheduler set cron_statement='0/15 * * * * ?' where name='atom-feed-openmrs-lab';
+            update quartz_cron_scheduler set cron_statement='0/15 * * * * ?' where 
+            name='atom-feed-openmrs-lab-failed';
+        </sql>
+    </changeSet>
+    <changeSet id="99" author="Mihir" context="bahmni">
+        <preConditions onFail="CONTINUE">
+            <sqlCheck expectedResult="2">
+                select count(*) from quartz_cron_scheduler where name in
+                 ('atom-feed-referencedata', 'atom-feed-referencedata-failed');
+            </sqlCheck>
+        </preConditions>
+        <comment>Delete reference data atom feed scheduler</comment>
+        <sql>
+            delete from quartz_cron_scheduler where name='atom-feed-referencedata';
+            delete from quartz_cron_scheduler where name='atom-feed-referencedata-failed';
+        </sql>
+    </changeSet>
+    <changeSet id="100" author="Mihir, Sravanthi" context="bahmni">
+        <comment>Delete view hiv_patients</comment>
+        <sql>
+            drop view if exists hiv_patients;
+        </sql>
+    </changeSet>
+    <changeSet id="101" author="Mihir, Sravanthi" context="bahmni">
+        <comment>Resize test_section name column</comment>
+        <sql>
+            ALTER TABLE test_section alter column name type VARCHAR(40);
+        </sql>
+    </changeSet>
+    <changeSet id="102" author="Mihir, Hemanth" context="bahmni">
+        <comment>Resize type_of_sample local_abbrev column</comment>
+        <sql>
+            ALTER TABLE type_of_sample alter column local_abbrev type VARCHAR(40);
+        </sql>
+    </changeSet>
+    <changeSet id="103" author="Chethan, Hemanth" context="bahmni">
+        <comment>altering the data type of name fields to accept 50 characters in person table and sampletracking view</comment>
+        <dropView schemaName="clinlims" viewName="sampletracking"/>
+        <modifyColumn schemaName="clinlims" tableName="person">
+            <column name="first_name" type="varchar(50)"/>
+            <column name="last_name" type="varchar(50)"/>
+            <column name="middle_name" type="varchar(50)"/>
+        </modifyColumn>
+        <sql>
+            CREATE OR REPLACE VIEW sampletracking AS
+            SELECT organizationinfo.accnum, patientinfo.patientid, organizationinfo.cliref, patientinfo.patientlastname, patientinfo.patientfirstname, patientinfo.dateofbirth, organizationinfo.orglocalabbrev AS org_local_abbrev, organizationinfo.orgname, organizationinfo.recddate, typeinfo.tosid, typeinfo.tosdesc, sourceinfo.sosid, sourceinfo.sosdesc, organizationinfo.colldate, sampleinfo.si AS sori
+            FROM ( SELECT s.accession_number AS accnum, p.last_name AS patientlastname, p.first_name AS patientfirstname, pt.external_id AS patientid, pt.birth_date AS dateofbirth
+            FROM sample s
+            LEFT JOIN sample_human samphum ON s.id = samphum.samp_id
+            LEFT JOIN patient pt ON samphum.patient_id = pt.id
+            LEFT JOIN person p ON pt.person_id = p.id) patientinfo, ( SELECT s.accession_number AS accnum, sos.id AS sosid, sos.description AS sosdesc
+            FROM sample s
+            LEFT JOIN sample_item sampitem ON s.id = sampitem.samp_id
+            LEFT JOIN source_of_sample sos ON sampitem.source_id = sos.id) sourceinfo, ( SELECT s.accession_number AS accnum, tos.id AS tosid, tos.description AS tosdesc
+            FROM sample s
+            LEFT JOIN sample_item sampitem ON s.id = sampitem.samp_id
+            LEFT JOIN type_of_sample tos ON sampitem.typeosamp_id = tos.id) typeinfo, ( SELECT s.accession_number AS accnum, org.local_abbrev AS orglocalabbrev, org.name AS orgname, s.received_date AS recddate, s.collection_date AS colldate, s.client_reference AS cliref
+            FROM sample s
+            LEFT JOIN sample_organization samporg ON s.id = samporg.samp_id
+            LEFT JOIN organization org ON samporg.org_id = org.id) organizationinfo, ( SELECT s.accession_number AS accnum, s.spec_or_isolate AS si
+            FROM sample s) sampleinfo
+            WHERE typeinfo.accnum::text = organizationinfo.accnum::text AND sourceinfo.accnum::text = organizationinfo.accnum::text AND patientinfo.accnum::text = organizationinfo.accnum::text AND sampleinfo.accnum::text = organizationinfo.accnum::text
+            ORDER BY organizationinfo.orglocalabbrev, organizationinfo.recddate, organizationinfo.colldate, typeinfo.tosdesc, sourceinfo.sosdesc;
+
+            ALTER TABLE sampletracking OWNER TO clinlims;
+        </sql>
+    </changeSet>
+
+    <changeSet author="Charles, Sravanthi" id="104" context="bahmni">
+        <dropNotNullConstraint
+                columnDataType="varchar(20)"
+                columnName="accession_number"
+                schemaName="clinlims"
+                tableName="sample"/>
+    </changeSet>
+
+    <changeSet id="105" author="Preethi, Sandeep" context="bahmni">
+        <addColumn tableName="test_result" schemaName="clinlims">
+            <column name="is_active" type="boolean" defaultValue="true"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="106" author="Preethi, Sandeep" context="bahmni">
+        <comment>set active flag for all test results</comment>
+        <sql>
+            update test_result set is_active=true;
+        </sql>
+    </changeSet>
+
+    <changeSet id="108" author="Sudhakar, Abishek" context="bahmni">
+        <addColumn tableName="failed_events" schemaName="clinlims" >
+            <column name="retries" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <createTable tableName="failed_event_retry_log" schemaName="clinlims">
+            <column name="id" type="serial">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="feed_uri" type="varchar(255)"/>
+            <column name="failed_at" type="timestamp"/>
+            <column name="error_message" type="varchar(4000)"/>
+            <column name="event_id" type="varchar(255)"/>
+            <column name="event_content" type="varchar(4000)"/>
+            <column name="error_hash_code" type="int"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="109" author="Shan, Sandeep" context="bahmni">
+        <addColumn tableName="analysis" schemaName="clinlims">
+            <column name="comment" type="varchar(1024)"  >
+                <constraints nullable="true"></constraints>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="110" author="Padma, Hemanth" context="bahmni">
+        <insert schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="id" valueNumeric=" nextval( 'quartz_cron_scheduler_seq' ) "/>
+            <column name="active" type="boolean" valueBoolean="true"/>
+            <column name="name" value="atom-feed-events-publisher"/>
+            <column name="job_name" value="atom-feed-events-publisher"/>
+            <column name="display_key" value="schedule.name.eventPublisher"/>
+            <column name="description_key" value="schedule.name.eventPublisher"/>
+            <column name="cron_statement" value="0/2 * * * * ?"/>
+        </insert>
+    </changeSet>
+
+    <changeSet author="Hemanth" id="14092015080113" context="bahmni">
+        <createTable tableName="event_records_queue" schemaName="clinlims">
+            <column name="id" type="serial">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="uuid" type="varchar(40)"/>
+            <column name="title" type="varchar(255)"/>
+            <column name="timestamp" type="timestamp" defaultValueDate="CURRENT_TIMESTAMP(6)"/>
+            <column name="uri" type="varchar(255)"/>
+            <!-- TODO: Change to CLOB -->
+            <column name="object" type="varchar(1000)"/>
+            <column name="category" type="varchar(255)"></column>
+        </createTable>
+
+    </changeSet>
+
+    <changeSet id="06102015170630" author="Achinta, Sudhakar" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(i.relname)
+                from pg_class t,
+                    pg_class i,
+                    pg_index ix,
+                    pg_attribute a
+                where
+                    t.oid = ix.indrelid
+                    and i.oid = ix.indexrelid
+                    and a.attrelid = t.oid
+                    and a.attnum = ANY(ix.indkey)
+                    and t.relkind = 'r'
+                    and t.relname = 'event_records'
+                    and i.relname = 'event_records_category_idx'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add index to the category column in event_records table for performance (if it is not already present)</comment>
+        <createIndex tableName="event_records" indexName="event_records_category_idx">
+            <column name="category"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="151120151208" author="Sourav" context="bahmni">
+        <comment>altering the data type of identity_data to accept 50 characters in patient_identity table</comment>
+        <modifyColumn schemaName="clinlims" tableName="patient_identity">
+            <column name="identity_data" type="varchar(50)"/>
+        </modifyColumn>
+    </changeSet>
+
+    <changeSet id="115420153112" author="Hanisha,Shashi" context="bahmni">
+        <comment>Add isReferredOut Column to Test </comment>
+        <addColumn tableName="test" schemaName="clinlims">
+            <column name="is_referred_out" type="boolean" defaultValue="false"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="120020160501" author="Hanisha, Shashi" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM referral_reason where name = 'Auto Referred Out';
+            </sqlCheck>
+        </preConditions>
+        <comment>Adding new organization External Lab</comment>
+        <insert schemaName="clinlims" tableName="referral_reason">
+        <column name="id" valueNumeric=" nextval( 'referral_reason_seq' ) "/>
+        <column name="name" value="Auto Referred Out"/>
+        <column name="description" value="Auto Referred Out"/>
+        <column name="display_key" value="referral.reason.autoReferredOut"/>
+        <column name="lastupdated" valueDate=" now() "/>
+    </insert>
+    </changeSet>
+
+    <changeSet id="042120160501" author="Hanisha,Shashi" runOnChange="false" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM organization where name = 'External Lab';
+            </sqlCheck>
+        </preConditions>
+        <insert schemaName="clinlims" tableName="organization">
+            <column name="id" valueNumeric=" nextval('organization_seq') "/>
+            <column name="name" value="External Lab"/>
+            <column name="is_active" value="Y"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="042220160501" author="Hanisha,Shashi" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) from organization_organization_type where org_id = (
+                SELECT id from organization where name = 'External Lab')
+            </sqlCheck>
+        </preConditions>
+        <comment>Adding new organization External Lab to organization_organization_type</comment>
+        <sql>
+        INSERT into organization_organization_type (org_id, org_type_id)
+        SELECT org.id,org_type.id from organization org, organization_type org_type
+        where org.name = 'External Lab' AND
+        org_type.short_name = 'referralLab';
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="2016-01-12-1202" author="Jaswanth, JP" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+            SELECT COUNT(*) from site_information where name = 'resultsPageSize'
+            </sqlCheck>
+        </preConditions>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="100"/>
+            <where>name='resultsPageSize'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="011920161233" context="bahmni" author="Shashi, Hanisha">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="clinlims" columnName="date_created" tableName="event_records"/>
+            </not>
+        </preConditions>
+        <comment>Creating column date_created for queue table. This indicates the time event was raised or created.</comment>
+        <addColumn  tableName="event_records" schemaName="clinlims">
+            <column name="date_created" type="TIMESTAMP" defaultValueDate="CURRENT_TIMESTAMP"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0119290161232" context="bahmni" author="Shashi, Hanisha">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="clinlims" columnName="tags" tableName="failed_events"/>
+            </not>
+        </preConditions>
+        <comment>Creating column tags for failed_events table. This is same as atom spec feed.entry.categories.</comment>
+        <addColumn  tableName="failed_events"  schemaName="clinlims">
+            <column name="tags" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="240220161208" author="Vinay" context="bahmni">
+        <comment>Identity data should contain full length of a concept name, which is 255 characters</comment>
+        <modifyColumn schemaName="clinlims" tableName="patient_identity">
+            <column name="identity_data" type="varchar(255)"/>
+        </modifyColumn>
+    </changeSet>
+    <changeSet id="140320161800" author="Vinay" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sample_lastupdated_idx"/>
+            </not>
+        </preConditions>
+        <comment>Add index on lastupdated for sample</comment>
+        <createIndex indexName="sample_lastupdated_idx"
+                     tableName="sample">
+            <column name="lastupdated"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="140320161801" author="Vinay" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="analysis_lastupdated_idx"/>
+            </not>
+        </preConditions>
+        <comment>Add index on lastupdated for analysis</comment>
+        <createIndex indexName="analysis_lastupdated_idx"
+                     tableName="analysis">
+            <column name="lastupdated"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="150320161101" author="Vinay" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+        <not>
+            <indexExists indexName="patient_identity_patient_id_idx"/>
+        </not>
+        </preConditions>
+        <comment>Add index on patient_id for patient_identity table</comment>
+        <createIndex indexName="patient_identity_patient_id_idx"
+                     tableName="patient_identity">
+            <column name="patient_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="201603171606" author="Jaswanth,Swathi" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from quartz_cron_scheduler where name = 'atom-feed-events-offset-marker';
+            </sqlCheck>
+        </preConditions>
+        <comment>Increase schedule interval to 24 hours</comment>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="0 0 12 * * ?"/>
+            <where>name='atom-feed-events-offset-marker'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="2016-03-24-9732" author="Jaswanth, Hemanth" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) from site_information where name = 'resultsPageSize'
+            </sqlCheck>
+        </preConditions>
+        <update schemaName="clinlims" tableName="site_information">
+            <column name="value" value="30"/>
+            <where>name='resultsPageSize'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="201615041044" author="Chethan" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from quartz_cron_scheduler where name = 'atom-feed-events-offset-marker';
+            </sqlCheck>
+        </preConditions>
+        <comment>atom-feed-events-offset-marker job should be run on 12 am everyday</comment>
+        <update schemaName="clinlims" tableName="quartz_cron_scheduler">
+            <column name="cron_statement" value="0 0 0 1/1 * ? *"/>
+            <where>name='atom-feed-events-offset-marker'</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="20160714-2017-1" author="Jaswanth,Padma" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="tags" tableName="event_records_queue"/>
+            </not>
+        </preConditions>
+        <comment>Creating column tags for queue table. Each event can be tagged with multiple tags; as comma separated strings</comment>
+        <addColumn tableName="event_records_queue">
+            <column name="tags" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20160714-2017-2" author="Jaswanth,Padma" context="bahmni">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="tags" tableName="event_records"/>
+            </not>
+        </preConditions>
+        <comment>Creating column tags for event_records table. Each event can be tagged with multiple tags; as comma separated strings</comment>
+        <addColumn tableName="event_records">
+            <column name="tags" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="030820161209" context="bahmni" author="Hanisha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from site_information where name = 'labLocation'
+            </sqlCheck>
+        </preConditions>
+        <comment>Adding the visit location for lab(Used in sync)</comment>
+        <sql >
+            insert into site_information (id, name, description, value, domain_id) values
+            (nextVal( 'site_information_seq' ), 'labLocation', 'Visit location for lab used for syncing lab results', '', (select id from site_information_domain where name = 'siteIdentity'))
+        </sql>
+    </changeSet>
+
+    <changeSet id="230820161641" context="bahmni" author="Jaswanth,Kaustav">
+        <dropColumn columnName="health_center_id" schemaName="clinlims" tableName="patient"/>
+        <dropTable tableName="health_center" schemaName="clinlims"/>
+    </changeSet>
+    <changeSet id="20160809" context="bahmni" author="Bindu,Gurpreet">
+        <comment> Update allowLanguageChange to true to enable Internationalization in Login page </comment>
+        <sql>
+            Update site_information SET value = 'true' where name = 'allowLanguageChange'
+        </sql>
+    </changeSet>
+    <changeSet id="add-atomfeed-user" context="bahmni" author="Jaswanth">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from login_user where login_name = 'atomfeed'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add user for accessing atomfeed</comment>
+        <sql>
+            insert into login_user values(nextval('login_user_seq'), 'atomfeed', 'SyPE4ibAjS4D3vOsEyjisw==',
+            '2036-05-02', 'N', 'N', 'Y', 120);
+            insert into system_user values(nextval('system_user_seq'), NULL, 'atomfeed', 'atomfeed', 'atomfeed', NULL,
+            'Y', 'N', NOW());
+        </sql>
+    </changeSet>
+    <changeSet id="update-admin-user-password-expiry-date" context="bahmni" author="Jaswanth">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from login_user where login_name = 'admin' and password_expired_dt = '2016-11-22'
+            </sqlCheck>
+        </preConditions>
+        <comment>Update admin user password expiry date</comment>
+        <sql>
+            update login_user set password_expired_dt = '2036-05-02' where login_name = 'admin'
+        </sql>
+    </changeSet>
+    <changeSet id="assign-module-to-atomfeed-user" context="bahmni" author="Jaswanth">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from login_user where login_name = 'atomfeed';
+            </sqlCheck>
+        </preConditions>
+        <comment>Assign LabDashboard module to atomfeed user</comment>
+        <sql>
+            update login_user set is_admin = 'N' where login_name = 'atomfeed';
+            insert into system_user_role values((select id from system_user where login_name = 'atomfeed'),(select id
+            from system_role where name = 'LabDashboard'));
+        </sql>
+    </changeSet>
+    <changeSet id="remove-lab-location-config" context="bahmni" author="Padma, Salauddin">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from site_information where name = 'labLocation'
+            </sqlCheck>
+        </preConditions>
+        <comment>Removing the lab location configuration</comment>
+        <sql >
+            delete from site_information where name='labLocation';
+        </sql>
+    </changeSet>
+    <changeSet id="configure-default-sample-source" context="bahmni" author="Padma, Salauddin">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from site_information where name = 'defaultSampleSource'
+            </sqlCheck>
+        </preConditions>
+        <comment>Adding the default Sample source configuration</comment>
+        <sql >
+            insert into site_information (id, name, description, value, domain_id) values
+            (nextVal( 'site_information_seq' ), 'defaultSampleSource', 'Configuration for default sample source value ', '', (select id from site_information_domain where name = 'siteIdentity'))
+        </sql>
+    </changeSet>
+    <changeSet id="change-sample-source-name-length" context="bahmni" author="Salauddin">
+        <comment>change sample source name to accept 50 characters</comment>
+        <sql>
+            ALTER TABLE sample_source ALTER COLUMN name TYPE character varying(50);
+        </sql>
+    </changeSet>
+    <changeSet id="configure-accession-strategy" context="bahmni" author="Mahitha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from site_information where name = 'accessionStrategy'
+            </sqlCheck>
+        </preConditions>
+        <comment>Add accession strategy</comment>
+        <sql >
+            insert into site_information (id, name, description, value, value_type, domain_id) values
+            (nextVal( 'site_information_seq' ), 'accessionStrategy', 'Strategy for Accession Generation', '', 'text', (select id from site_information_domain where name = 'siteIdentity'))
+        </sql>
+    </changeSet>
+    <changeSet id="202001281052" context="bahmni" author="Srivathsala"  >
+        <comment>create a new table to store type of test status</comment>
+        <createSequence sequenceName="type_of_test_status_seq" minValue="1" startValue="1" />
+        <createTable schemaName="clinlims" tableName="type_of_test_status">
+            <column name="id" type="int">
+                <constraints primaryKeyName="pk_type_of_test_status" primaryKey="true" />
+            </column>
+            <column name="status_name" type="varchar(50)">
+                <constraints nullable="false" unique="true" />
+            </column>
+            <column name="description" type="varchar(200)">
+                <constraints nullable="false" unique="true" />
+            </column>
+            <column name="status_type" type="varchar(20)">
+                <constraints nullable="false" />
+            </column>
+            <column name="is_active" type="varchar(1)" defaultValue="Y" />
+            <column name="is_result_required" type="varchar(1)" defaultValue="N" />
+            <column name="is_approval_required" type="varchar(1)" defaultValue="N" />
+            <column name="date_created" type="timestamp" defaultValueDate="CURRENT_TIMESTAMP(6)" />
+            <column name="lastupdated" type="timestamp(6)" />
+        </createTable>
+    </changeSet>
+    <changeSet id="202001281053" context="bahmni" author="Srivathsala" >
+        <comment>create a new table to store status for a test</comment>
+        <createSequence sequenceName="test_status_seq" minValue="0" startValue="1" />
+        <createTable schemaName="clinlims" tableName="test_status">
+            <column name="id" type="int">
+                <constraints primaryKeyName="pk_test_status" primaryKey="true" />
+            </column>
+            <column name="test_id" type="int">
+                <constraints nullable="true" unique="true" />
+            </column>
+            <column name="test_status_id" type="int">
+                <constraints nullable="true" />
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="202001281054" context="bahmni" author="Srivathsala">
+        <addForeignKeyConstraint baseColumnNames="test_id" baseTableName="test_status" constraintName="test_fk" onDelete="SET NULL" referencedColumnNames="id" referencedTableName="test" />
+    </changeSet>
+    <changeSet id="202001281055" context="bahmni" author="Srivathsala">
+        <addForeignKeyConstraint baseColumnNames="test_status_id" baseTableName="test_status" constraintName="test_status_fk" onDelete="SET NULL" referencedColumnNames="id" referencedTableName="type_of_test_status" />
+    </changeSet>
+    <changeSet id="add-new-column-for-reference-info" context="bahmni" author="Rupam">
+        <comment>Adds a referenceInfo column to test</comment>
+        <sql>
+            ALTER TABLE test ADD reference_info varchar(400);
+        </sql>
+    </changeSet>
+    <changeSet id="add-new-status-for-analysis" context="bahmni" author="Rupam">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from status_of_sample where name = 'Marked As Done'
+            </sqlCheck>
+        </preConditions>
+        <comment>adding new status for case when a referred out test was marked as done and without any result entered or file attached gets validated</comment>
+        <sql >
+            insert into status_of_sample(id,name,description,code,status_type,display_key,is_active) values
+            (nextVal( 'status_of_sample_seq' ),'Marked As Done','The result of the referred out test were validated and are final',1,'ANALYSIS','status.test.referred.markAsDone','Y');
+        </sql>
+    </changeSet>
+    <changeSet id="202001281056" context="bahmni" author="buvaneswari" >
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from clinlims.site_information where name = 'flagForShowingTestStatus';
+            </sqlCheck>
+        </preConditions>
+        <comment>Adds a flag to control type of test status visibility</comment>
+        <insert schemaName="clinlims" tableName="site_information">
+            <column name="id" valueNumeric=" nextval( 'site_information_seq' ) "/>
+            <column name="name" value="flagForShowingTestStatus"/>
+            <column name="description" value="This flag needs to be set to true to see the test status drop down"/>
+            <column name="value_type" value="boolean"/>
+            <column name="value" value="false"/>
+            <column name="domain_id"
+                    valueNumeric=" (select id from clinlims.site_information_domain where name = 'siteIdentity' ) "/>
+            <column name="lastupdated" valueDate=" now() "/>
+        </insert>
+    </changeSet>
+    <changeSet id="BAH4572802241425" context="bahmni" author="bahmni" >
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from clinlims.site_information where name = 'accessionStrategy' and value='';
+            </sqlCheck>
+        </preConditions>
+        <comment>set the accession strategy to groupbySample to show the priority column on ui</comment>
+        <sql >
+            UPDATE site_information
+            SET value = 'groupBySample'
+            WHERE name = 'accessionStrategy';
+        </sql>
+    </changeSet>
+
+    <changeSet id="BAH3908_test_table" context="bahmni" author="Mohankumar" >
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="test" columnName="name"/>
+            <columnExists tableName="test" columnName="description"/>
+        </preConditions>
+        <comment>Extend the size of name and description columns of Test table</comment>
+        <sql>
+            ALTER TABLE test ALTER COLUMN name TYPE varchar(256);
+            ALTER TABLE test ALTER COLUMN description TYPE varchar(256);
+        </sql>
+    </changeSet>
+    <changeSet id="BAH3908_panel_table" context="bahmni" author="Mohankumar" >
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="panel" columnName="name"/>
+            <columnExists tableName="panel" columnName="description"/>
+        </preConditions>
+        <comment>Extend the size of name and description columns of Panel table</comment>
+        <sql>
+            ALTER TABLE panel ALTER COLUMN name TYPE varchar(256);
+            ALTER TABLE panel ALTER COLUMN description TYPE varchar(256);
+        </sql>
+    </changeSet>
+    
+</databaseChangeLog>
+

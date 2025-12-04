@@ -1,0 +1,91 @@
+name: Build and Publish OpenELIS
+on:
+  push:
+    branches:
+      - main
+      - 'release-*'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+    paths-ignore:
+      - '**.md'
+  workflow_run:
+    workflows: [Pull Translations from Transifex]
+    types: [completed]
+    branches:
+      - main
+      - 'release-*'
+
+jobs:
+  docker-build-publish:
+    name: Build & Publish OpenELIS Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Java 7 for ant
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '7'
+      - name: Setup Ruby 3.1
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1
+      - name: Install Compass
+        run: gem install ffi -v 1.17.0 && gem install compass
+      - name: Install Ant 1.9
+        run: |
+          mkdir /tmp/ant
+          cd /tmp/ant
+          wget https://dlcdn.apache.org//ant/binaries/apache-ant-1.9.16-bin.tar.gz
+          tar -zxf apache-ant-1.9.16-bin.tar.gz
+          echo "ANT_HOME=/tmp/ant/apache-ant-1.9.16" >> $GITHUB_ENV
+          echo "/tmp/ant/apache-ant-1.9.16/bin" >> $GITHUB_PATH
+      - name: Set env.ARTIFACT_VERSION
+        run: |
+          wget -q https://raw.githubusercontent.com/Bahmni/bahmni-infra-utils/main/setArtifactVersion.sh && chmod +x setArtifactVersion.sh
+          ./setArtifactVersion.sh || echo "ARTIFACT_VERSION=dev-$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+          rm setArtifactVersion.sh
+      - name: Package
+        run: ant dist
+      - name: Package
+        run: ant dist
+
+      - name: Generate OpenElis.zip
+        run: |
+          echo "Generating OpenElis.zip from migration folders..."
+          mkdir -p OpenElis
+          # Copy migration folders
+          cp -r db_backup OpenElis/db_backup
+          cp -r liquibase OpenElis/liquibase
+          cp -r scripts OpenElis/scripts
+          # Zip the folder
+          zip -r OpenElis.zip OpenElis
+          # Verify
+          ls -lh OpenElis.zip
+
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2 
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Docker Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          file: package/docker/openelis/Dockerfile
+          push: true
+          tags: utsavd/openelis:${{env.ARTIFACT_VERSION}},utsavd/openelis:latest
+      # - name: Push Translations to Transifex
+      #   run: |
+      #     curl -o transifex.sh https://raw.githubusercontent.com/Bahmni/bahmni-infra-utils/main/transifex.sh
+      #     chmod +x transifex.sh
+      #     ./transifex.sh push
+      #     rm transifex.sh
+      #   env:
+          # TX_TOKEN: ${{ secrets.TX_TOKEN }}

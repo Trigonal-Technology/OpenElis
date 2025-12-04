@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="us.mn.state.health.lims.scriptlet.valueholder.Scriptlet" table="SCRIPTLET" optimistic-lock="version" dynamic-update="true">
+        <id name="id" type="us.mn.state.health.lims.hibernate.resources.usertype.LIMSStringNumberUserType">
+            <column name="ID" precision="10" scale="0" />
+            <generator class="sequence">
+               <param name="sequence">scriptlet_seq</param>
+            </generator> 
+        </id>
+        <version name="lastupdated" column="LASTUPDATED" type="timestamp" access="field"/>
+
+        <property name="scriptletName" type="java.lang.String">
+            <column name="NAME" length="40" />
+        </property>
+        <property name="codeType" type="java.lang.String">
+            <column name="CODE_TYPE" length="1" />
+        </property>
+        <property name="codeSource" type="java.lang.String">
+            <column name="CODE_SOURCE" length="0" />
+        </property>
+    </class>
+</hibernate-mapping>

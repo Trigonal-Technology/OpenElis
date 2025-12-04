@@ -1,0 +1,224 @@
+<project name="OpenElis" default="test" basedir=".">
+    <description>
+        OpenElis build file. Reason we are not using maven is because the code is not structured according to it.
+    </description>
+    <presetdef name="javac">
+        <javac includeantruntime="false"/>
+    </presetdef>
+    <property file="build.properties"/>
+    <property environment="env"/>
+
+    <target name="init">
+        <tstamp/>
+        <mkdir dir="${target}"/>
+    </target>
+
+    <path id="lib">
+        <fileset dir="${web}/WEB-INF/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="jasper.lib">
+        <pathelement path="${target}"/>
+        <fileset dir="${web}/WEB-INF/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="test.lib">
+        <fileset dir="${test.src}/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="build.lib">
+        <fileset dir="build/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <taskdef name="propertyMerge" classname="org.jugbb.ant.propertymerge.PropertyMergeTask" classpathref="build.lib"/>
+
+    <target name="compass.compile" description="compile sass files">
+        <exec dir="${web}" executable="compass">
+            <arg line="compile"/>
+        </exec>
+    </target>
+
+
+    <target name="compile" depends="init, java.compile,jasper.compile, compass.compile"
+        description="compile the source ">
+    </target>
+
+    <target name="java.compile"
+            description="compile the source ">
+        <mkdir dir="${target}"/>
+        <javac srcdir="${src}" destdir="${target}" encoding="iso-8859-1" classpathref="lib" source="1.7" target="1.7" debug="on"/>
+        <copy todir="${target}">
+            <fileset dir="${src}" includes="**/*.xml"/>
+            <fileset dir="${src}" includes="**/*.properties"/>
+        </copy>
+    </target>
+
+    <taskdef name="jrc" classname="net.sf.jasperreports.ant.JRAntCompileTask"> 
+        <classpath refid="build.lib"/>
+    </taskdef>
+
+    <target name="jasper.compile" depends="java.compile">
+        <jrc 
+                srcdir="${web}/WEB-INF/reports"
+                destdir="${web}/WEB-INF/reports"
+                tempdir="${web}/WEB-INF/reports"
+                keepjava="false"
+                xmlvalidation="true">
+            <include name="**/*.jrxml"/>
+            <classpath refid="jasper.lib"/>
+        </jrc>
+    </target>
+
+    <target name="dist" depends="clean, compile, migrationScripts"
+            description="generate the distribution">
+        <mkdir dir="${dist}/lib"/>
+        <copy todir="${target}">
+            <fileset dir="${src}" includes="**/*.properties"/>
+        </copy>
+        <copy file="LICENSE" todir="${dist}"/>
+        <propertyMerge
+                inputpropertyfile="${target}/MessageResources.properties"
+                mergepropertyfile="${target}/BahmniMessageResources.properties"
+                outputpropertyfile="${target}/MessageResources.properties"
+                native2ascii="true"/>
+        <war destfile="${dist}/openelis.war">
+            <classes dir="${target}"/>
+            <fileset dir="${web}"/>
+            <fileset file="${dist}/LICENSE"/>            
+            <lib dir="${dist}/lib"/>
+        </war>
+    </target>
+
+    <target name="migrationScripts">
+        <zip destfile="OpenElis.zip" basedir="../" includes="OpenElis**/**" excludes="**/.idea/**,*.iml,*.git*,**/dist/*,**/target/*,*.svn*,**/out/**,**/openelis/**,**/src/**,**/logs/**,**/junit/*,**/OpenElis.zip" />
+    </target>
+
+    <target name="build" depends="clean, compile, resetDB, test, report, dist"/>
+    <target name="devbuild" depends="clean, compile, updateDB, test, report, dist"/>
+    <target name="useHaitiDB" depends="dropDB, initHaitiDB, updateHaitiDB, updateDB" />
+
+    <target name="initHaitiDB">
+        <chmod file="scripts/initDB.sh" perm="a+x"/>
+        <exec executable="scripts/initDB.sh">
+            <arg value="haitiClinical.backup"/>
+        </exec>
+    </target>
+    <target name="updateHaitiDB">
+        <echo message="Running migration for contexts : Haiti"/>
+        <exec executable="java" failonerror="true" dir="${liquibase}">
+            <arg line="-jar -Dfile.encoding=utf-8 lib/liquibase-1.9.5.jar --changeLogFile=./changeLogs.xml --defaultsFile=liquibase.properties --contexts=haiti --url=jdbc:postgresql://localhost:5432/clinlims update"/>
+        </exec>
+    </target>
+
+    <target name="vagrant-deploy" depends="dist">
+
+        <condition property="script_extension" value="sh" else="bat">
+            <os family="unix" />
+        </condition>
+
+        <echo message="Deploying OpenElis.war to Vagrant Tomcat"/>
+        <exec executable="${basedir}/scripts/vagrant/vagrant-deploy.${script_extension}" failonerror="true">
+            <arg line="${basedir} ${dist}/openelis.war"/>
+        </exec>
+    </target>
+
+
+    <target name="clean">
+        <delete dir="${target}"/>
+        <delete dir="${dist}"/>
+        <delete dir="${junit.output.dir}"/>
+        <delete dir="${test.target}"/>
+        <delete>
+            <fileset dir="${web}/WEB-INF/reports">
+                <include name="*.jasper"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="setupDB" depends="initDB, updateDB"/>
+
+    <target name="initDB">
+        <chmod file="scripts/initDB.sh" perm="a+x"/>
+        <exec executable="scripts/initDB.sh">
+            <arg value="bahmni-base.dump"/>
+        </exec>
+    </target>
+
+    <target name="dropDB">
+        <echo message="DROPPING OpenELIS database ......"/>
+        <sleep seconds="4" description="Waiting for few seconds in case the person does not want to delete the DB."/>
+        <chmod file="scripts/dropDB.sh" perm="a+x"/>
+        <exec executable="scripts/dropDB.sh"/>
+    </target>
+
+    <target name="resetDB" depends="dropDB, initDB, updateDB"/>
+
+    <target name="updateDB">
+        <echo message="Running migration for contexts : Bahmni"/>
+        <exec executable="java" failonerror="true" dir="${liquibase}">
+            <arg line="-jar -Dfile.encoding=utf-8 lib/liquibase-1.9.5.jar --defaultsFile=liquibase.properties --contexts=bahmni --url=jdbc:postgresql://localhost:5432/clinlims  --logLevel=warning update"/>
+        </exec>
+    </target>
+
+    <target name="test" depends="clean, compile, updateDB" />
+
+    <target name="test-only">
+        <mkdir dir="${junit.output.dir}"/>
+        <mkdir dir="${test.target}"/>
+        <javac srcdir="${test.src}" destdir="${test.target}" encoding="iso-8859-1" debug="on">
+            <classpath>
+                <dirset dir="${target}"/>
+                <path refid="test.lib"/>
+                <path refid="lib"/>
+            </classpath>
+        </javac>
+        <copy todir="${test.target}">
+            <fileset dir="${test.src}" includes="**/*.json"/>
+        </copy>
+        <junit printsummary="yes" haltonerror="false" haltonfailure="false"
+               showoutput="true" failureproperty="test.failed">
+            <classpath>
+                <fileset dir="${liquibase}/lib">
+                    <include name="*.jar"/>
+                </fileset>
+                <path refid="test.lib"/>
+                <path refid="lib"/>
+                <pathelement location="${src}"/>
+                <pathelement location="${target}"/>
+                <pathelement location="${test.target}"/>
+            </classpath>
+            <batchtest todir="${junit.output.dir}">
+                <formatter type="xml"/>
+                <fileset dir="${test.src}">
+                    <include name="**/*Test*.java"/>
+                    <include name="**/*IT.java"/>
+                    <exclude name="**/*BaseTest.java"/>
+                    <exclude name="**/All*Tests.java"/>
+                    <exclude name="**/openelis/builder/*.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+        <antcall target="report"/>
+        <fail message="Test failure detected, check test results." if="test.failed"/>
+    </target>
+
+    <target name="report">
+        <mkdir dir="${junit.output.dir}/html"/>
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report todir="${junit.output.dir}/html"/>
+        </junitreport>
+        <property name="absolute.report.path" location="${junit.output.dir}/html"/>
+        <echo message=">> Junit HTML Report generated in location: '${absolute.report.path}/index.html'"/>
+    </target>
+</project>

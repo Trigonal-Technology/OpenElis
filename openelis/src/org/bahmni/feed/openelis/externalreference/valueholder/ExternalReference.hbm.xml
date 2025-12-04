@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="org.bahmni.feed.openelis.externalreference.valueholder">
+    <class name="ExternalReference" table="external_reference" optimistic-lock="version" dynamic-update="true">
+       <id name="id" type="us.mn.state.health.lims.hibernate.resources.usertype.LIMSStringNumberUserType">
+          <column name="ID" precision="10" scale="0" />
+         <generator class="sequence">
+            <param name="sequence">external_reference_id_seq</param>
+         </generator>
+       </id>
+
+		<property name="externalId" type="java.lang.String">
+            <column name="EXTERNAL_ID"  />
+        </property>
+        <property name="itemId" type="long">
+            <column name="ITEM_ID" />
+        </property>
+        <property name="type" type="java.lang.String">
+            <column name="TYPE"  />
+        </property>
+
+    </class>
+</hibernate-mapping>

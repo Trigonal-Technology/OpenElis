@@ -1,0 +1,27 @@
+#nationalID,.nationalID,
+#insuranceID,.insuranceID,
+#requestingFacilityID,.requestingFacilityID,
+#akaID,.akaID,
+#providerWorkPhoneID,.providerWorkPhoneID,
+.empty-row
+{
+    display:none;
+}
+#nationalID,.nationalID,
+#insuranceID,.insuranceID,
+#requestingFacilityID,.requestingFacilityID,
+#akaID,.akaID,
+#providerWorkPhoneID,.providerWorkPhoneID,
+.empty-row
+{
+    display:none;
+}
+
+#searchResultTable tr th:last-child,#searchResultTable tr td:last-child{
+    display:none;
+}
+
+#searchResultTable tr th:last-child,#searchResultTable tr td:last-child{
+    display:none;
+}
+
