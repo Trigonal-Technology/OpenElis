@@ -16,7 +16,7 @@
 
 package org.bahmni.feed.openelis.feed.service.impl;
 
-
+import org.bahmni.feed.openelis.feed.contract.odoo.OdooTest;
 import org.bahmni.feed.openelis.externalreference.dao.ExternalReferenceDao;
 import org.bahmni.feed.openelis.externalreference.daoimpl.ExternalReferenceDaoImpl;
 import org.bahmni.feed.openelis.externalreference.valueholder.ExternalReference;
@@ -75,13 +75,13 @@ public class TestService {
      * Exposed a constructor which takes all params for unit-testing purposes.
      */
     public TestService(ExternalReferenceDao externalReferenceDao,
-                       TestDAO testDAO,
-                       TestResultService testResultService,
-                       TestSectionDAO testSectionDAO,
-                       AuditingService auditingService,
-                       TypeOfSampleDAO typeOfSampleDAO,
-                       TypeOfSampleTestDAO typeOfSampleTestDAO,
-                       DictionaryDAO dictionaryDao) {
+            TestDAO testDAO,
+            TestResultService testResultService,
+            TestSectionDAO testSectionDAO,
+            AuditingService auditingService,
+            TypeOfSampleDAO typeOfSampleDAO,
+            TypeOfSampleTestDAO typeOfSampleTestDAO,
+            DictionaryDAO dictionaryDao) {
 
         this.externalReferenceDao = externalReferenceDao;
         this.testDAO = testDAO;
@@ -103,8 +103,7 @@ public class TestService {
                     test = populateTest(test, referenceDataTest, sysUserId, null);
                     testDAO.insertData(test);
                     saveExternalReference(referenceDataTest, test);
-                }
-                else {
+                } else {
                     return;
                 }
             } else {
@@ -117,32 +116,34 @@ public class TestService {
                 testResultService.createOrUpdate(test, "R", null);
             }
             if (referenceDataTest.getResultType().equals("Coded")) {
-                Collection<CodedTestAnswer> codedTestAnswer = (Collection<CodedTestAnswer>) referenceDataTest.getCodedTestAnswer();
+                Collection<CodedTestAnswer> codedTestAnswer = (Collection<CodedTestAnswer>) referenceDataTest
+                        .getCodedTestAnswer();
                 Dictionary dict = null;
-                //Mark all coded Ans inactive
+                // Mark all coded Ans inactive
                 testResultService.makeCodedAnswersInactive(test.getId());
                 for (CodedTestAnswer testAnswer : codedTestAnswer) {
-                    ExternalReference dictReference = externalReferenceDao.getData(testAnswer.getUuid(), CATEGORY_TEST_CODED_ANS);
-                    if(dictReference==null){
+                    ExternalReference dictReference = externalReferenceDao.getData(testAnswer.getUuid(),
+                            CATEGORY_TEST_CODED_ANS);
+                    if (dictReference == null) {
                         Dictionary existingDictionary = dictionaryDao.getDictionaryByDictEntry(testAnswer.getName());
-                        if(existingDictionary == null) {
+                        if (existingDictionary == null) {
                             dict = new Dictionary();
                             dict.setDictEntry(testAnswer.getName());
                             dict.setLastupdated(new Timestamp(new Date().getTime()));
                             dict.setSysUserId(sysUserId);
                             dictionaryDao.insertData(dict);
-                        }else{
+                        } else {
                             dict = existingDictionary;
                         }
                         saveExternalReference(testAnswer, dict);
-                    }else{
+                    } else {
                         dict = dictionaryDao.getDictionaryById(String.valueOf(dictReference.getItemId()));
                         dict.setDictEntry(testAnswer.getName());
                         dict.setLastupdated(new Timestamp(new Date().getTime()));
                         dict.setSysUserId(sysUserId);
                         dictionaryDao.updateData(dict, false);
                     }
-                    //If there is existing rln make it active
+                    // If there is existing rln make it active
                     testResultService.createOrUpdate(test, "D", dict.getId());
                 }
             }
@@ -164,9 +165,10 @@ public class TestService {
         externalReferenceDao.insertData(data);
     }
 
-    private Test populateTest(Test test, ReferenceDataTest referenceDataTest, String sysUserId, String testSectionUuid) throws IOException {
+    private Test populateTest(Test test, ReferenceDataTest referenceDataTest, String sysUserId, String testSectionUuid)
+            throws IOException {
         test.setTestName(referenceDataTest.getName());
-        //Assign to dummy test section
+        // Assign to dummy test section
         TestSection section = getTestSection(testSectionUuid);
         if (referenceDataTest.getTestUnitOfMeasure() != null) {
             test.setUnitOfMeasure(unitOfMeasureService.create(referenceDataTest.getTestUnitOfMeasure()));
@@ -209,6 +211,57 @@ public class TestService {
         return testDAO.getTestByName(test.getName());
     }
 
+    public void createOrUpdateFromOdoo(OdooTest odooTest) throws LIMSException {
+        try {
+            String sysUserId = auditingService.getSysUserId();
+            // Try to find by external reference first
+            ExternalReference data = externalReferenceDao.getData(String.valueOf(odooTest.getId()), CATEGORY_TEST);
+            Test test = null;
+
+            if (data != null) {
+                test = testDAO.getTestById(String.valueOf(data.getItemId()));
+            } else {
+                // Try to find by name if external reference doesn't exist
+                test = testDAO.getTestByName(odooTest.getName());
+            }
+
+            if (test == null) {
+                if (odooTest.getActive()) {
+                    test = new Test();
+                    populateTestFromOdoo(test, odooTest, sysUserId);
+                    testDAO.insertData(test);
+                    // Save external reference
+                    ExternalReference ref = new ExternalReference(Long.parseLong(test.getId()),
+                            String.valueOf(odooTest.getId()), CATEGORY_TEST);
+                    externalReferenceDao.insertData(ref);
+                }
+            } else {
+                populateTestFromOdoo(test, odooTest, sysUserId);
+                testDAO.updateData(test);
+            }
+            TypeOfSampleUtil.clearTestCache();
+        } catch (Exception e) {
+            throw new LIMSException(String.format("Error while saving test from Odoo - %s", odooTest.getName()), e);
+        }
+    }
+
+    private Test populateTestFromOdoo(Test test, OdooTest odooTest, String sysUserId) {
+        test.setTestName(odooTest.getName());
+        test.setName(odooTest.getName());
+        test.setDescription(
+                odooTest.getDescription() != null && !odooTest.getDescription().isEmpty() ? odooTest.getDescription()
+                        : odooTest.getName());
+        test.setIsActive(
+                odooTest.getActive() != null & odooTest.getActive() ? IActionConstants.YES : IActionConstants.NO);
+        test.setLastupdated(new Timestamp(new Date().getTime()));
+        test.setSysUserId(sysUserId);
+        test.setOrderable(true);
+
+        // Assign to default test section if not set
+        if (test.getTestSection() == null) {
+            test.setTestSection(getTestSection(null));
+        }
+
+        return test;
+    }
 }
-
-

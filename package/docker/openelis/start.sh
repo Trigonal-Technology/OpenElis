@@ -15,6 +15,15 @@ rm -rf /var/www/bahmni_config/
 mkdir -p /var/www/bahmni_config/
 ln -s /etc/bahmni_config/openelis /var/www/bahmni_config/openelis
 
+# Extract war file if provided in /etc/bahmni-lab/openelis.war
+if [ -f /etc/bahmni-lab/openelis.war ]; then
+    echo "[INFO] Extracting openelis.war to ${WAR_DIRECTORY}"
+    # Use jar from JDK if available, otherwise java -xf might work if it's a jar-enabled JVM
+    # But since we're in Corretto 8, jar command exists
+    mkdir -p ${WAR_DIRECTORY}
+    (cd ${WAR_DIRECTORY} && jar xf /etc/bahmni-lab/openelis.war)
+fi
+
 replaceConfigFiles
 ./update_openmrs_host_port.sh
 echo "[INFO] Running Default Liquibase migrations"

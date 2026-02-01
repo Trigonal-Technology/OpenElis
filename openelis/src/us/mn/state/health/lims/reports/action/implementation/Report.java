@@ -21,8 +21,6 @@ import static org.apache.commons.validator.GenericValidator.isBlankOrNull;
 import java.sql.Date;
 import java.util.*;
 
-import javax.xml.ws.Response;
-
 import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperRunManager;

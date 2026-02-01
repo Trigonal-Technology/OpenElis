@@ -1553,16 +1553,36 @@
             <forward name="success" path="dashboardMaster"/>
         </action>
 
-        <action path="/rest/**" name="WebServiceForm" type="us.mn.state.health.lims.ws.ResourceRetrieveAction" validate="false">
+        <!-- Specific REST endpoints must come BEFORE wildcard patterns -->
+        <!-- Note: Action paths here are relative to the servlet mapping /rest/*, so /rest/scheduledTasks becomes /scheduledTasks -->
+        <action path="/scheduledTasks" name="WebServiceForm" type="us.mn.state.health.lims.ws.TasksMonitoringAction" validate="false">
             <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
         </action>
 
-        <action path="/rest/scheduledTasks" name="WebServiceForm" type="us.mn.state.health.lims.ws.TasksMonitoringAction" validate="false">
+        <action path="/odoo/test-order" name="WebServiceForm" type="us.mn.state.health.lims.ws.action.OdooTestOrderAction" validate="false">
             <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
+        </action>
+
+        <action path="/odoo/patient" name="WebServiceForm" type="us.mn.state.health.lims.ws.action.OdooPatientAction" validate="false">
+            <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
+        </action>
+        <action path="/odoo/test" name="WebServiceForm" type="us.mn.state.health.lims.ws.action.OdooTestAction" validate="false">
+            <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
+        </action>
+
+        <!-- Wildcard pattern for other REST endpoints - must come AFTER specific paths -->
+        <action path="/**" name="WebServiceForm" type="us.mn.state.health.lims.ws.ResourceRetrieveAction" validate="false">
+            <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
         </action>
 
         <action path="/feed/**" name="WebServiceForm" type="us.mn.state.health.lims.feed.AtomFeedAction" validate="false">
             <forward name="success" path="success"/>
+            <forward name="fail" path="success"/>
         </action>
 
         <action path="/Upload" name="UploadForm" type="us.mn.state.health.lims.upload.UploadForm">

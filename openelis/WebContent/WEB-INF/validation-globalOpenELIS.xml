@@ -14,6 +14,11 @@
 		</form>
 	</formset>
 	<formset>
+		<!-- WebServiceForm - no validation rules needed, validation is disabled -->
+		<form name="WebServiceForm">
+		</form>
+	</formset>
+	<formset>
 		<form name="InventoryForm">
 			<field property="kitName"
 				indexedListProperty="inventoryItems" depends="required">

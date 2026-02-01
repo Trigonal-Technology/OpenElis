@@ -1,0 +1,14 @@
+FROM eclipse-temurin:8-jdk
+
+# Install Ant, Ruby, and Build tools
+RUN apt-get update && \
+    apt-get install -y ant ruby ruby-dev gcc g++ make && \
+    gem install compass && \
+    apt-get clean
+
+WORKDIR /app
+
+# The app source should be mounted to /app
+# Usage: docker run -v $(pwd):/app openelis-build dist
+ENTRYPOINT ["ant"]
+CMD ["-f", "build.xml", "dist"]
