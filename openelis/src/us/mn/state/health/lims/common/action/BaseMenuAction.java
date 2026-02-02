@@ -43,7 +43,8 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		return SystemConfiguration.getInstance().getDefaultPageSize();
 	}
 
-	protected ActionForward performAction(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
+	protected ActionForward performAction(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response)
 			throws Exception {
 
 		String forward = FWD_SUCCESS;
@@ -58,14 +59,14 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 
 		try {
 			switch (action) {
-			case PREVIOUS:
-				menuList = doPreviousPage(mapping, form, request, response);
-				break;
-			case NEXT:
-				menuList = doNextPage(mapping, form, request, response);
-				break;
-			default:
-				menuList = doNone(mapping, form, request, response);
+				case PREVIOUS:
+					menuList = doPreviousPage(mapping, form, request, response);
+					break;
+				case NEXT:
+					menuList = doNextPage(mapping, form, request, response);
+					break;
+				default:
+					menuList = doNone(mapping, form, request, response);
 			}
 		} catch (Exception e) {
 			// bugzilla 2154
@@ -89,7 +90,8 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		return mapping.findForward(forward);
 	}
 
-	protected List doNextPage(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
+	protected List doNextPage(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response)
 			throws Exception {
 
 		int startingRecNo = getCurrentStartingRecNo(request);
@@ -117,7 +119,8 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		return nextPageList;
 	}
 
-	protected List doPreviousPage(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
+	protected List doPreviousPage(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response)
 			throws Exception {
 
 		int startingRecNo = getCurrentStartingRecNo(request);
@@ -146,7 +149,8 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		return previousPageList;
 	}
 
-	protected List doNone(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
+	protected List doNone(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response)
 			throws Exception {
 
 		int startingRecNo = getCurrentStartingRecNo(request);
@@ -185,15 +189,18 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		}
 
 		int startingRecNo = Integer.parseInt(stringStartingRecNo);
+		if (startingRecNo < 1) {
+			startingRecNo = 1;
+		}
 		return startingRecNo;
 	}
 
-	protected abstract List createMenuList(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
+	protected abstract List createMenuList(ActionMapping mapping, ActionForm form, HttpServletRequest request,
+			HttpServletResponse response)
 			throws Exception;
 
 	protected abstract String getDeactivateDisabled();
 
-	
 	protected String getAddDisabled() {
 		return "false";
 	}
@@ -202,7 +209,8 @@ public abstract class BaseMenuAction extends BaseAction implements IActionConsta
 		return "false";
 	}
 
-	protected void setDisplayPageBounds(HttpServletRequest request, int listSize, int startingRecNo, BaseDAO DAO, Class valueClass)
+	protected void setDisplayPageBounds(HttpServletRequest request, int listSize, int startingRecNo, BaseDAO DAO,
+			Class valueClass)
 			throws LIMSRuntimeException {
 		request.setAttribute(MENU_TOTAL_RECORDS, String.valueOf(DAO.getTotalCount(valueClass.getName(), valueClass)));
 		request.setAttribute(MENU_FROM_RECORD, String.valueOf(startingRecNo));

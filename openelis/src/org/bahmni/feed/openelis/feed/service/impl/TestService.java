@@ -40,17 +40,30 @@ import us.mn.state.health.lims.dictionary.dao.DictionaryDAO;
 import us.mn.state.health.lims.test.valueholder.TestSection;
 import us.mn.state.health.lims.typeofsample.dao.TypeOfSampleDAO;
 import us.mn.state.health.lims.typeofsample.dao.TypeOfSampleTestDAO;
+import us.mn.state.health.lims.typeofsample.daoimpl.TypeOfSampleDAOImpl;
+import us.mn.state.health.lims.typeofsample.daoimpl.TypeOfSampleTestDAOImpl;
 import us.mn.state.health.lims.typeofsample.util.TypeOfSampleUtil;
+import us.mn.state.health.lims.typeofsample.valueholder.TypeOfSample;
+import us.mn.state.health.lims.typeofsample.valueholder.TypeOfSampleTest;
+import us.mn.state.health.lims.panel.dao.PanelDAO;
+import us.mn.state.health.lims.panel.daoimpl.PanelDAOImpl;
+import us.mn.state.health.lims.panel.valueholder.Panel;
+import us.mn.state.health.lims.panelitem.dao.PanelItemDAO;
+import us.mn.state.health.lims.panelitem.daoimpl.PanelItemDAOImpl;
+import us.mn.state.health.lims.panelitem.valueholder.PanelItem;
 import org.bahmni.feed.openelis.feed.contract.bahmnireferencedata.CodedTestAnswer;
 
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 public class TestService {
 
     public static final String CATEGORY_TEST = "Test";
+    public static final String CATEGORY_PANEL = "Panel";
     public static final String CATEGORY_TEST_CODED_ANS = "CodedAns";
     public static final String DUMMY_TEST_SECTION_NAME = "New";
     private DictionaryDAO dictionaryDao;
@@ -60,6 +73,10 @@ public class TestService {
     private ExternalReferenceDao externalReferenceDao;
     private TestSectionDAO testSectionDAO;
     private UnitOfMeasureService unitOfMeasureService;
+    private TypeOfSampleDAO typeOfSampleDAO;
+    private TypeOfSampleTestDAO typeOfSampleTestDAO;
+    private PanelDAO panelDAO;
+    private PanelItemDAO panelItemDAO;
 
     public TestService() {
         this.testDAO = new TestDAOImpl();
@@ -69,6 +86,10 @@ public class TestService {
         this.auditingService = new AuditingService(new LoginDAOImpl(), new SiteInformationDAOImpl());
         this.unitOfMeasureService = new UnitOfMeasureService();
         this.dictionaryDao = new DictionaryDAOImpl();
+        this.typeOfSampleDAO = new TypeOfSampleDAOImpl();
+        this.typeOfSampleTestDAO = new TypeOfSampleTestDAOImpl();
+        this.panelDAO = new PanelDAOImpl();
+        this.panelItemDAO = new PanelItemDAOImpl();
     }
 
     /**
@@ -214,6 +235,12 @@ public class TestService {
     public void createOrUpdateFromOdoo(OdooTest odooTest) throws LIMSException {
         try {
             String sysUserId = auditingService.getSysUserId();
+
+            if (odooTest.getIsPanel()) {
+                syncPanelFromOdoo(odooTest, sysUserId);
+                return;
+            }
+
             // Try to find by external reference first
             ExternalReference data = externalReferenceDao.getData(String.valueOf(odooTest.getId()), CATEGORY_TEST);
             Test test = null;
@@ -239,29 +266,165 @@ public class TestService {
                 populateTestFromOdoo(test, odooTest, sysUserId);
                 testDAO.updateData(test);
             }
+
+            // Simple result type handling (Numerical/Text)
+            if (test != null && odooTest.getResultType() != null) {
+                if (odooTest.getResultType().equalsIgnoreCase("numerical") ||
+                        odooTest.getResultType().equalsIgnoreCase("text")) {
+                    testResultService.createOrUpdate(test, "R", null);
+                }
+            }
+
             TypeOfSampleUtil.clearTestCache();
         } catch (Exception e) {
             throw new LIMSException(String.format("Error while saving test from Odoo - %s", odooTest.getName()), e);
         }
     }
 
-    private Test populateTestFromOdoo(Test test, OdooTest odooTest, String sysUserId) {
+    private Test populateTestFromOdoo(Test test, OdooTest odooTest, String sysUserId) throws IOException {
         test.setTestName(odooTest.getName());
         test.setName(odooTest.getName());
         test.setDescription(
                 odooTest.getDescription() != null && !odooTest.getDescription().isEmpty() ? odooTest.getDescription()
                         : odooTest.getName());
         test.setIsActive(
-                odooTest.getActive() != null & odooTest.getActive() ? IActionConstants.YES : IActionConstants.NO);
+                odooTest.getActive() != null && odooTest.getActive() ? IActionConstants.YES : IActionConstants.NO);
         test.setLastupdated(new Timestamp(new Date().getTime()));
         test.setSysUserId(sysUserId);
         test.setOrderable(true);
+        test.setSortOrder(odooTest.getSortOrder() != null ? String.valueOf(odooTest.getSortOrder()) : "0");
+        test.setReferenceInfo(odooTest.getReferenceRange());
+        test.setLoinc(odooTest.getLoinc());
+
+        // Assign to department (Test Section) if provided - CREATE if it doesn't exist
+        if (odooTest.getDepartment() != null && !odooTest.getDepartment().isEmpty()) {
+            TestSection section = testSectionDAO.getTestSectionByName(odooTest.getDepartment());
+            if (section == null) {
+                section = new TestSection();
+                section.setTestSectionName(odooTest.getDepartment());
+                section.setIsActive(IActionConstants.YES);
+                section.setLastupdated(new Timestamp(new Date().getTime()));
+                section.setSysUserId(sysUserId);
+                testSectionDAO.insertData(section);
+            }
+            test.setTestSection(section);
+        }
 
         // Assign to default test section if not set
         if (test.getTestSection() == null) {
             test.setTestSection(getTestSection(null));
         }
 
+        // Set Unit of Measure
+        if (odooTest.getUom() != null && !odooTest.getUom().isEmpty()) {
+            test.setUnitOfMeasure(unitOfMeasureService.create(odooTest.getUom()));
+        }
+
+        // Link to Sample Type so it appears in Collect Sample section
+        if (odooTest.getSampleType() != null && !odooTest.getSampleType().isEmpty()) {
+            linkTestToSampleType(test, odooTest.getSampleType(), sysUserId);
+        }
+
         return test;
+    }
+
+    private void linkTestToSampleType(Test test, String sampleTypeName, String sysUserId) {
+        try {
+            TypeOfSample tosParam = new TypeOfSample();
+            tosParam.setDescription(sampleTypeName);
+            // Search ignoring case
+            TypeOfSample tos = typeOfSampleDAO.getTypeOfSampleByDescriptionAndDomain(tosParam, true);
+            if (tos != null) {
+                List<TypeOfSampleTest> existingLinks = typeOfSampleTestDAO.getTypeOfSampleTestsForTest(test.getId());
+                boolean found = false;
+                for (TypeOfSampleTest link : existingLinks) {
+                    if (link.getTypeOfSampleId().equals(tos.getId())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    TypeOfSampleTest newLink = new TypeOfSampleTest();
+                    newLink.setTestId(test.getId());
+                    newLink.setTypeOfSampleId(tos.getId());
+                    newLink.setSysUserId(sysUserId);
+                    typeOfSampleTestDAO.insertData(newLink);
+                }
+            }
+        } catch (Exception e) {
+            // Silently log or handle linking error
+        }
+    }
+
+    private void syncPanelFromOdoo(OdooTest odooTest, String sysUserId) throws LIMSException {
+        try {
+            ExternalReference data = externalReferenceDao.getData(String.valueOf(odooTest.getId()), CATEGORY_PANEL);
+            Panel panel = null;
+            if (data != null) {
+                panel = panelDAO.getPanelById(String.valueOf(data.getItemId()));
+            } else {
+                panel = panelDAO.getPanelByName(odooTest.getName());
+            }
+
+            if (panel == null) {
+                if (odooTest.getActive()) {
+                    panel = new Panel();
+                    populatePanelFromOdoo(panel, odooTest, sysUserId);
+                    panelDAO.insertData(panel);
+                    ExternalReference ref = new ExternalReference(Long.parseLong(panel.getId()),
+                            String.valueOf(odooTest.getId()), CATEGORY_PANEL);
+                    externalReferenceDao.insertData(ref);
+                }
+            } else {
+                populatePanelFromOdoo(panel, odooTest, sysUserId);
+                panelDAO.updateData(panel);
+            }
+
+            if (panel != null) {
+                syncPanelItems(panel, odooTest, sysUserId);
+            }
+        } catch (Exception e) {
+            throw new LIMSException(String.format("Error while saving panel from Odoo - %s", odooTest.getName()), e);
+        }
+    }
+
+    private void populatePanelFromOdoo(Panel panel, OdooTest odooTest, String sysUserId) {
+        panel.setPanelName(odooTest.getName());
+        panel.setDescription(odooTest.getName());
+        panel.setSysUserId(sysUserId);
+        panel.setIsActive(
+                odooTest.getActive() != null && odooTest.getActive() ? IActionConstants.YES : IActionConstants.NO);
+        panel.setLastupdated(new Timestamp(new Date().getTime()));
+        panel.setSortOrderInt(odooTest.getSortOrder() != null ? odooTest.getSortOrder() : 0);
+    }
+
+    private void syncPanelItems(Panel panel, OdooTest odooTest, String sysUserId) throws LIMSException {
+        // Delete existing items
+        List<PanelItem> items = panelItemDAO.getPanelItemByPanel(panel, false);
+        for (PanelItem item : items) {
+            item.setSysUserId(sysUserId);
+        }
+        panelItemDAO.deleteData(items);
+
+        // Add new items
+        if (odooTest.getTestUuids() != null) {
+            int sortOrder = 1;
+            for (String testUuid : odooTest.getTestUuids()) {
+                ExternalReference ref = externalReferenceDao.getData(testUuid, CATEGORY_TEST);
+                if (ref != null) {
+                    Test test = testDAO.getTestById(String.valueOf(ref.getItemId()));
+                    if (test != null) {
+                        PanelItem panelItem = new PanelItem();
+                        panelItem.setPanel(panel);
+                        panelItem.setPanelName(panel.getPanelName());
+                        panelItem.setTest(test);
+                        panelItem.setTestName(test.getTestName());
+                        panelItem.setSortOrder(String.valueOf(sortOrder++));
+                        panelItem.setSysUserId(sysUserId);
+                        panelItemDAO.insertData(panelItem);
+                    }
+                }
+            }
+        }
     }
 }

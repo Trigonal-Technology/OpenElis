@@ -42,6 +42,33 @@ public class OdooTest {
     @JsonProperty("list_price")
     private Double listPrice;
 
+    @JsonProperty("is_panel")
+    private Boolean isPanel;
+
+    @JsonProperty("test_uuids")
+    private java.util.List<String> testUuids;
+
+    @JsonProperty("elis_department")
+    private String department;
+
+    @JsonProperty("elis_sample_type")
+    private String sampleType;
+
+    @JsonProperty("elis_result_type")
+    private String resultType;
+
+    @JsonProperty("elis_uom")
+    private String uom;
+
+    @JsonProperty("elis_reference_range")
+    private String referenceRange;
+
+    @JsonProperty("elis_loinc")
+    private String loinc;
+
+    @JsonProperty("elis_sort_order")
+    private Integer sortOrder;
+
     public OdooTest() {
     }
 
@@ -99,5 +126,77 @@ public class OdooTest {
 
     public void setListPrice(Double listPrice) {
         this.listPrice = listPrice;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getSampleType() {
+        return sampleType;
+    }
+
+    public void setSampleType(String sampleType) {
+        this.sampleType = sampleType;
+    }
+
+    public String getResultType() {
+        return resultType;
+    }
+
+    public void setResultType(String resultType) {
+        this.resultType = resultType;
+    }
+
+    public String getUom() {
+        return uom;
+    }
+
+    public void setUom(String uom) {
+        this.uom = uom;
+    }
+
+    public String getReferenceRange() {
+        return referenceRange;
+    }
+
+    public void setReferenceRange(String referenceRange) {
+        this.referenceRange = referenceRange;
+    }
+
+    public String getLoinc() {
+        return loinc;
+    }
+
+    public void setLoinc(String loinc) {
+        this.loinc = loinc;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public Boolean getIsPanel() {
+        return isPanel != null && isPanel;
+    }
+
+    public void setIsPanel(Boolean isPanel) {
+        this.isPanel = isPanel;
+    }
+
+    public java.util.List<String> getTestUuids() {
+        return testUuids;
+    }
+
+    public void setTestUuids(java.util.List<String> testUuids) {
+        this.testUuids = testUuids;
     }
 }

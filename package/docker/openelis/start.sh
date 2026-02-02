@@ -25,7 +25,7 @@ if [ -f /etc/bahmni-lab/openelis.war ]; then
 fi
 
 replaceConfigFiles
-./update_openmrs_host_port.sh
+# ./update_openmrs_host_port.sh
 echo "[INFO] Running Default Liquibase migrations"
 cd /opt/bahmni-lab/migrations/liquibase/ && sh /opt/bahmni-lab/migrations/scripts/migrateDb.sh
 echo "[INFO] Running User Defined Liquibase migrations"

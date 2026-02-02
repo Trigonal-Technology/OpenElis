@@ -51,7 +51,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
     }
 
     public void deleteData(List organizations) throws LIMSRuntimeException {
-        //add to audit trail
+        // add to audit trail
         try {
             AuditTrailDAO auditDAO = new AuditTrailDAOImpl();
             for (int i = 0; i < organizations.size(); i++) {
@@ -66,7 +66,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
                 auditDAO.saveHistory(newData, oldData, sysUserId, event, tableName);
             }
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "AuditTrail deleteData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization AuditTrail deleteData()", e);
         }
@@ -76,7 +76,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
                 Organization data = (Organization) organizations.get(i);
                 Organization cloneData = (Organization) readOrganization(data.getId());
 
-                //Make the change to the object.
+                // Make the change to the object.
                 cloneData.setIsActive(IActionConstants.NO);
                 HibernateUtil.getSession().merge(cloneData);
                 HibernateUtil.getSession().flush();
@@ -85,7 +85,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
                 HibernateUtil.getSession().refresh(cloneData);
             }
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "deleteData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization deleteData()", e);
         }
@@ -124,7 +124,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
                         "Duplicate record exists for " + organization.getOrganizationName());
             }
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "updateData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization updateData()", e);
         }
@@ -132,7 +132,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         Organization oldData = (Organization) readOrganization(organization.getId());
         Organization newData = organization;
 
-        //add to audit trail
+        // add to audit trail
         try {
             AuditTrailDAO auditDAO = new AuditTrailDAOImpl();
             String sysUserId = organization.getSysUserId();
@@ -140,7 +140,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             String tableName = "ORGANIZATION";
             auditDAO.saveHistory(newData, oldData, sysUserId, event, tableName);
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "AuditTrail updateData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization AuditTrail updateData()", e);
         }
@@ -152,7 +152,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             HibernateUtil.getSession().evict(organization);
             HibernateUtil.getSession().refresh(organization);
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "updateData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization updateData()", e);
         }
@@ -166,11 +166,11 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             if (org != null) {
                 PropertyUtils.copyProperties(organization, org);
             } else {
-                //bugzilla 1366
+                // bugzilla 1366
                 organization.setId(null);
             }
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getData()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getData()", e);
         }
@@ -185,7 +185,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             HibernateUtil.getSession().flush();
             HibernateUtil.getSession().clear();
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getAllOrganizations()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getAllOrganizations()", e);
         }
@@ -199,7 +199,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             // calculate maxRow to be one more than the page size
             int endingRecNo = startingRecNo + (SystemConfiguration.getInstance().getDefaultPageSize() + 1);
 
-            //bugzilla 1399
+            // bugzilla 1399
             String sql = "from Organization o order by o.organizationName";
             org.hibernate.Query query = HibernateUtil.getSession().createQuery(sql);
             query.setFirstResult(startingRecNo - 1);
@@ -209,7 +209,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             HibernateUtil.getSession().flush();
             HibernateUtil.getSession().clear();
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getPageOfOrganizations()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getPageOfOrganizations()", e);
         }
@@ -217,7 +217,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         return list;
     }
 
-    //	 bugzilla 2372
+    // bugzilla 2372
     public List getPagesOfSearchedOrganizations(int startingRecNo, String searchString)
             throws LIMSRuntimeException {
         List list = new Vector();
@@ -228,15 +228,23 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         try {
             int endingRecNo = startingRecNo
                     + (SystemConfiguration.getInstance().getDefaultPageSize() + 1);
+            if (searchString == null) {
+                searchString = "";
+            }
+            searchString = searchString.trim();
+            if (searchString.startsWith("\"") && searchString.endsWith("\"")) {
+                searchString = searchString.substring(1, searchString.length() - 1);
+            }
+            System.out.println("Searching organizations for: [" + searchString + "]");
             int wCdPosition = searchString.indexOf(wildCard);
 
-            if (wCdPosition == -1)  // no wild card looking for exact match
+            if (wCdPosition == -1) // no wild card, default to contains search
             {
-                newSearchStr = searchString.toLowerCase().trim();
-                sql = "from Organization o where trim(lower (o.organizationName)) = :param  order by o.organizationName";
+                newSearchStr = "%" + searchString.toLowerCase().trim() + "%";
+                sql = "from Organization o where (trim(lower(o.organizationName)) like :param or trim(lower(o.organizationLocalAbbreviation)) like :param) order by o.organizationName ";
             } else {
                 newSearchStr = searchString.replace(wildCard, "%").toLowerCase().trim();
-                sql = "from Organization o where trim(lower (o.organizationName)) like :param  order by o.organizationName";
+                sql = "from Organization o where (trim(lower(o.organizationName)) like :param or trim(lower(o.organizationLocalAbbreviation)) like :param) order by o.organizationName";
             }
             org.hibernate.Query query = HibernateUtil.getSession().createQuery(sql);
             query.setParameter("param", newSearchStr);
@@ -254,8 +262,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
 
         return list;
     }
-    //end bugzilla 2372
-
+    // end bugzilla 2372
 
     public Organization readOrganization(String idString) {
         Organization org = null;
@@ -264,7 +271,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             HibernateUtil.getSession().flush();
             HibernateUtil.getSession().clear();
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "readOrganization()", e.toString());
             throw new LIMSRuntimeException("Error in Organization readOrganization()", e);
         }
@@ -284,7 +291,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             HibernateUtil.getSession().flush();
             HibernateUtil.getSession().clear();
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getOrganizations()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getOrganizations(String filter)", e);
         }
@@ -306,7 +313,8 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         return getPreviousRecord(id, "Organization", Organization.class);
     }
 
-    public Organization getOrganizationByName(Organization organization, boolean ignoreCase) throws LIMSRuntimeException {
+    public Organization getOrganizationByName(Organization organization, boolean ignoreCase)
+            throws LIMSRuntimeException {
         String sql = null;
         try {
             if (ignoreCase) {
@@ -332,14 +340,15 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             return org;
 
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getOrganizationByName()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getOrganizationByName()", e);
         }
     }
 
-    //bugzilla 2069
-    public Organization getOrganizationByLocalAbbreviation(Organization organization, boolean ignoreCase) throws LIMSRuntimeException {
+    // bugzilla 2069
+    public Organization getOrganizationByLocalAbbreviation(Organization organization, boolean ignoreCase)
+            throws LIMSRuntimeException {
         String sql = null;
         try {
             if (ignoreCase) {
@@ -366,19 +375,18 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             return org;
 
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getOrganizationByLocalAbbreviation()", e.toString());
             throw new LIMSRuntimeException("Error in Organization getOrganizationByLocalAbbreviation()", e);
         }
     }
 
-
-    //bugzilla 1411
+    // bugzilla 1411
     public Integer getTotalOrganizationCount() throws LIMSRuntimeException {
         return getTotalCount("Organization", Organization.class);
     }
 
-    //overriding BaseDAOImpl bugzilla 1427 pass in name not id
+    // overriding BaseDAOImpl bugzilla 1427 pass in name not id
     public List getNextRecord(String id, String table, Class clazz) throws LIMSRuntimeException {
 
         List list = new Vector();
@@ -391,7 +399,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
             list = query.list();
 
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getNextRecord()", e.toString());
             throw new LIMSRuntimeException("Error in getNextRecord() for " + table, e);
         }
@@ -399,7 +407,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         return list;
     }
 
-    //overriding BaseDAOImpl bugzilla 1427 pass in name not id
+    // overriding BaseDAOImpl bugzilla 1427 pass in name not id
     public List getPreviousRecord(String id, String table, Class clazz) throws LIMSRuntimeException {
 
         List list = new Vector();
@@ -411,7 +419,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
 
             list = query.list();
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logError("OrganizationDAOImpl", "getPreviousRecord()", e.toString());
             throw new LIMSRuntimeException("Error in getPreviousRecord() for " + table, e);
         }
@@ -419,24 +427,24 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
         return list;
     }
 
-
     private boolean duplicateOrganizationExists(Organization organization) throws LIMSRuntimeException {
         try {
 
             List list = new ArrayList();
 
-            //only check if the test to be inserted/updated is active
+            // only check if the test to be inserted/updated is active
             if (organization.getIsActive().equalsIgnoreCase(IActionConstants.YES)) {
                 // not case sensitive hemolysis and Hemolysis are considered
                 // duplicates
-                String sql = "from Organization o where ((trim(lower(o.organizationName))) = :orgName and o.isActive='Y' and o.id != :orgId)" +
+                String sql = "from Organization o where ((trim(lower(o.organizationName))) = :orgName and o.isActive='Y' and o.id != :orgId)"
+                        +
                         " or " +
                         "((trim(lower(o.organizationLocalAbbreviation))) = :orgAbrv and o.isActive='Y' and o.id != :orgId)";
                 org.hibernate.Query query = HibernateUtil.getSession().createQuery(
                         sql);
                 query.setParameter("orgName", organization.getOrganizationName().toLowerCase().trim());
 
-                //initialize with 0 (for new records where no id has been generated yet
+                // initialize with 0 (for new records where no id has been generated yet
                 String orgId = "0";
                 if (!StringUtil.isNullorNill(organization.getId())) {
                     orgId = organization.getId();
@@ -449,20 +457,19 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
                 }
                 query.setParameter("orgAbrv", organizationLocalAbbrev);
 
-
                 list = query.list();
             }
 
             return list.size() > 0;
 
         } catch (Exception e) {
-            //bugzilla 2154
+            // bugzilla 2154
             LogEvent.logErrorStack("OrganizationDAOImpl", "duplicateOrganizationExists()", e);
             throw new LIMSRuntimeException("Error in duplicateOrganizationExists()", e);
         }
     }
 
-    //	 bugzilla 2372 get total searched results
+    // bugzilla 2372 get total searched results
     public Integer getTotalSearchedOrganizationCount(String searchString)
             throws LIMSRuntimeException {
 
@@ -473,15 +480,23 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
 
         try {
 
+            if (searchString == null) {
+                searchString = "";
+            }
+            searchString = searchString.trim();
+            if (searchString.startsWith("\"") && searchString.endsWith("\"")) {
+                searchString = searchString.substring(1, searchString.length() - 1);
+            }
+            System.out.println("Counting searched organizations for: [" + searchString + "]");
             int wCdPosition = searchString.indexOf(wildCard);
 
-            if (wCdPosition == -1)  // no wild card looking for exact match
+            if (wCdPosition == -1) // no wild card, default to contains search
             {
-                newSearchStr = searchString.toLowerCase().trim();
-                sql = "select count (*) from Organization o where trim(lower (o.organizationName)) = :param ";
+                newSearchStr = "%" + searchString.toLowerCase().trim() + "%";
+                sql = "select count (*) from Organization o where (trim(lower(o.organizationName)) like :param or trim(lower(o.organizationLocalAbbreviation)) like :param)";
             } else {
                 newSearchStr = searchString.replace(wildCard, "%").toLowerCase().trim();
-                sql = "select count (*) from Organization o where trim(lower (o.organizationName)) like :param ";
+                sql = "select count (*) from Organization o where (trim(lower(o.organizationName)) like :param or trim(lower(o.organizationLocalAbbreviation)) like :param)";
             }
             Query query = HibernateUtil.getSession().createQuery(sql);
             query.setParameter("param", newSearchStr);
@@ -492,7 +507,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
 
             if (results != null && results.get(0) != null) {
                 if (results.get(0) != null) {
-                    count = (Integer) results.get(0);
+                    count = ((Long) results.get(0)).intValue();
                 }
             }
 
@@ -504,7 +519,7 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
 
         return count;
     }
-    //end bugzilla 2372
+    // end bugzilla 2372
 
     public Set<Organization> getOrganizationsByProjectName(String projectName) {
         Project p = new Project();
@@ -515,7 +530,8 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
     }
 
     /**
-     * @see us.mn.state.health.lims.organization.dao.OrganizationDAO#getOrganizationsByOrgTypeName(java.lang.String, java.lang.String[])
+     * @see us.mn.state.health.lims.organization.dao.OrganizationDAO#getOrganizationsByOrgTypeName(java.lang.String,
+     *      java.lang.String[])
      */
 
     public List<Organization> getOrganizationsByTypeName(String orderByProperty, String... typeNames) {
@@ -544,7 +560,8 @@ public class OrganizationDAOImpl extends GenericDAOImpl<String, Organization> im
     public List<Organization> getOrganizationsByTypeNameAndLeadingChars(String partialName, String typeName) {
 
         try {
-            String sql = "SELECT o FROM Organization AS o INNER JOIN o.organizationTypes AS ot WHERE ot.name = :typeName " +
+            String sql = "SELECT o FROM Organization AS o INNER JOIN o.organizationTypes AS ot WHERE ot.name = :typeName "
+                    +
                     " AND o.isActive = 'Y' AND upper(o.organizationName) like upper(:partialName) order by upper(o.organizationName)";
             Query query = HibernateUtil.getSession().createQuery(sql);
             query.setParameter("typeName", typeName);

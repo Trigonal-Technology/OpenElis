@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.*;
 
 import us.mn.state.health.lims.common.action.BaseMenuAction;
+import us.mn.state.health.lims.common.log.LogEvent;
 import us.mn.state.health.lims.common.util.StringUtil;
 import us.mn.state.health.lims.common.util.SystemConfiguration;
 import us.mn.state.health.lims.login.dao.UserTestSectionDAO;
@@ -34,53 +35,58 @@ import us.mn.state.health.lims.test.daoimpl.TestDAOImpl;
 /**
  * @author diane benz
  * 
- * To change this generated comment edit the template variable "typecomment":
- * Window>Preferences>Java>Templates. To enable and disable the creation of type
- * comments go to Window>Preferences>Java>Code Generation.
+ *         To change this generated comment edit the template variable
+ *         "typecomment":
+ *         Window>Preferences>Java>Templates. To enable and disable the creation
+ *         of type
+ *         comments go to Window>Preferences>Java>Code Generation.
  */
 public class TestMenuAction extends BaseMenuAction {
 
 	protected List createMenuList(ActionMapping mapping, ActionForm form,
 			HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
-	    
+
 		List tests = new ArrayList();
 
 		String stringStartingRecNo = (String) request
 				.getAttribute("startingRecNo");
 		int startingRecNo = Integer.parseInt(stringStartingRecNo);
-		
+		LogEvent.logInfo("TestMenuAction", "createMenuList",
+				"Entry: startingRecNo=" + startingRecNo + ", searchString=[" + request.getParameter("searchString")
+						+ "], doingSearch=[" + request.getParameter("search") + "]");
+
 		// bugzilla 2371
-		 String searchString=(String) request
-       .getParameter("searchString");
-		 
-		String doingSearch=(String)request
-       .getParameter("search");
-	
-        
+		String searchString = (String) request
+				.getParameter("searchString");
+
+		String doingSearch = (String) request
+				.getParameter("search");
+
 		TestDAO testDAO = new TestDAOImpl();
-						
-	    tests = testDAO.getPageOfTests(startingRecNo);
+
+		tests = testDAO.getPageOfTests(startingRecNo);
 		// end of bugzilla 2371
-		
-		//Get tests by user system id
-		//bugzilla 2160
+
+		// Get tests by user system id
+		// bugzilla 2160
 		UserTestSectionDAO userTestSectionDAO = new UserTestSectionDAOImpl();
-		
-//		 bugzilla 2371
-//why get the tests and then get them again and this method maybe does and maybe doesn't get them by user id
-		tests = userTestSectionDAO.getPageOfTestsBySysUserId(request,startingRecNo, doingSearch, searchString);
+
+		// bugzilla 2371
+		// why get the tests and then get them again and this method maybe does and
+		// maybe doesn't get them by user id
+		tests = userTestSectionDAO.getPageOfTestsBySysUserId(request, startingRecNo, doingSearch, searchString);
 
 		request.setAttribute("menuDefinition", "TestMenuDefinition");
 
-		// bugzilla 1411 set pagination variables 
+		// bugzilla 1411 set pagination variables
 		// bugzilla 2371 set pagination variables for searched results.
 		if (!StringUtil.isNullorNill(doingSearch) && doingSearch.equals(YES))
 			request.setAttribute(MENU_TOTAL_RECORDS, String.valueOf(testDAO
-					.getAllSearchedTotalTestCount (request, searchString)));
+					.getAllSearchedTotalTestCount(request, searchString)));
 		else
-		    request.setAttribute(MENU_TOTAL_RECORDS, String.valueOf(testDAO
-				.getTotalTestCount()));
+			request.setAttribute(MENU_TOTAL_RECORDS, String.valueOf(testDAO
+					.getTotalTestCount()));
 		request.setAttribute(MENU_FROM_RECORD, String.valueOf(startingRecNo));
 		int numOfRecs = 0;
 		if (tests != null) {
@@ -95,19 +101,18 @@ public class TestMenuAction extends BaseMenuAction {
 		}
 		int endingRecNo = startingRecNo + numOfRecs;
 		request.setAttribute(MENU_TO_RECORD, String.valueOf(endingRecNo));
-		//end bugzilla 1411
-		
-		//bugzilla 2371
+		// end bugzilla 1411
+
+		// bugzilla 2371
 		request.setAttribute(MENU_SEARCH_BY_TABLE_COLUMN, "test.description");
-		
-			
-		if (!StringUtil.isNullorNill(doingSearch) && doingSearch.equals(YES) ) {
-		 
-		   request.setAttribute(IN_MENU_SELECT_LIST_HEADER_SEARCH, "true");
-		   
-		   request.setAttribute(MENU_SELECT_LIST_HEADER_SEARCH_STRING, searchString );
+
+		if (!StringUtil.isNullorNill(doingSearch) && doingSearch.equals(YES)) {
+
+			request.setAttribute(IN_MENU_SELECT_LIST_HEADER_SEARCH, "true");
+
+			request.setAttribute(MENU_SELECT_LIST_HEADER_SEARCH_STRING, searchString);
 		}
-		
+
 		return tests;
 	}
 
@@ -127,29 +132,34 @@ public class TestMenuAction extends BaseMenuAction {
 	protected String getDeactivateDisabled() {
 		return "true";
 	}
-	
-    @Override
+
+	@Override
 	protected String getAddDisabled() {
-        return "false";
-    }
-    
-    @Override
-    protected String getEditDisabled() {
-        return "false";
-    }   
-    
-    /**
-     * Because there is code in UswerModuleDAO.enabledAdminButtons to deal with users and what they are allowed to do.
-     * When we really want turn off a button for a site regardless who the user is, we have to go last and do it here.
-     * Yes, this is a hack.        
-     * 
-     * @see us.mn.state.health.lims.common.action.BaseAction#execute(org.apache.struts.action.ActionMapping, org.apache.struts.action.ActionForm, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-     */
-    public ActionForward execute(ActionMapping mapping, ActionForm form,
-                    HttpServletRequest request, HttpServletResponse response)
-                    throws Exception {
-        ActionForward forward = super.execute(mapping, form, request, response);
-        request.setAttribute(ADD_DISABLED, getAddDisabled());        
-        return forward;
-    }
+		return "false";
+	}
+
+	@Override
+	protected String getEditDisabled() {
+		return "false";
+	}
+
+	/**
+	 * Because there is code in UswerModuleDAO.enabledAdminButtons to deal with
+	 * users and what they are allowed to do.
+	 * When we really want turn off a button for a site regardless who the user is,
+	 * we have to go last and do it here.
+	 * Yes, this is a hack.
+	 * 
+	 * @see us.mn.state.health.lims.common.action.BaseAction#execute(org.apache.struts.action.ActionMapping,
+	 *      org.apache.struts.action.ActionForm,
+	 *      javax.servlet.http.HttpServletRequest,
+	 *      javax.servlet.http.HttpServletResponse)
+	 */
+	public ActionForward execute(ActionMapping mapping, ActionForm form,
+			HttpServletRequest request, HttpServletResponse response)
+			throws Exception {
+		ActionForward forward = super.execute(mapping, form, request, response);
+		request.setAttribute(ADD_DISABLED, getAddDisabled());
+		return forward;
+	}
 }

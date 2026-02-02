@@ -79,7 +79,7 @@ public class UserTestSectionDAOImpl extends BaseDAOImpl implements UserTestSecti
 		List list = new ArrayList();
 		TestDAO testDAO = new TestDAOImpl();	
 		
-		try {
+		try { LogEvent.logInfo("UserTestSectionDAOImpl", "getPageOfTestsBySysUserId", "Entry: startingRecNo=" + startingRecNo + ", doingSearch=" + doingSearch + ", searchStr=[" + searchStr + "]");
 			if ( SystemConfiguration.getInstance().getEnableUserTestSection().equals(NO) ) {
 				
 				if (!StringUtil.isNullorNill(doingSearch) && doingSearch.equals(YES))
