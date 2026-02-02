@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
 <Appenders>
+    <Console name="console" target="SYSTEM_OUT">
+        <PatternLayout pattern="%d %-5p [ELIS][%c{1}] %m%n"/>
+    </Console>
     <RollingFile name="file"
                  fileName="${sys:catalina.base}/bahmni-lab.log"
                  filePattern="${sys:catalina.base}/bahmni-lab.log.%i">
@@ -13,6 +16,7 @@
 </Appenders>
 <Loggers>
     <Root level="INFO">
+        <AppenderRef ref="console"/>
         <AppenderRef ref="file"/>
     </Root>
 </Loggers>

@@ -52,6 +52,11 @@ import us.mn.state.health.lims.panelitem.dao.PanelItemDAO;
 import us.mn.state.health.lims.panelitem.daoimpl.PanelItemDAOImpl;
 import us.mn.state.health.lims.panelitem.valueholder.PanelItem;
 import org.bahmni.feed.openelis.feed.contract.bahmnireferencedata.CodedTestAnswer;
+import us.mn.state.health.lims.typeofsample.dao.TypeOfSamplePanelDAO;
+import us.mn.state.health.lims.typeofsample.daoimpl.TypeOfSamplePanelDAOImpl;
+import us.mn.state.health.lims.typeofsample.valueholder.TypeOfSamplePanel;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -61,6 +66,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class TestService {
+    private static final Logger logger = LogManager.getLogger(TestService.class);
 
     public static final String CATEGORY_TEST = "Test";
     public static final String CATEGORY_PANEL = "Panel";
@@ -75,6 +81,7 @@ public class TestService {
     private UnitOfMeasureService unitOfMeasureService;
     private TypeOfSampleDAO typeOfSampleDAO;
     private TypeOfSampleTestDAO typeOfSampleTestDAO;
+    private TypeOfSamplePanelDAO typeOfSamplePanelDAO;
     private PanelDAO panelDAO;
     private PanelItemDAO panelItemDAO;
 
@@ -88,6 +95,7 @@ public class TestService {
         this.dictionaryDao = new DictionaryDAOImpl();
         this.typeOfSampleDAO = new TypeOfSampleDAOImpl();
         this.typeOfSampleTestDAO = new TypeOfSampleTestDAOImpl();
+        this.typeOfSamplePanelDAO = new TypeOfSamplePanelDAOImpl();
         this.panelDAO = new PanelDAOImpl();
         this.panelItemDAO = new PanelItemDAOImpl();
     }
@@ -233,55 +241,90 @@ public class TestService {
     }
 
     public void createOrUpdateFromOdoo(OdooTest odooTest) throws LIMSException {
+        logger.info("=== Starting createOrUpdateFromOdoo ===");
+        logger.info("Test ID: {}", odooTest.getId());
+        logger.info("Test Name: {}", odooTest.getName());
+        logger.info("Department: {}", odooTest.getDepartment());
+        logger.info("Sample Type: {}", odooTest.getSampleType());
+        logger.info("Result Type: {}", odooTest.getResultType());
+        logger.info("Is Panel: {}", odooTest.getIsPanel());
+        logger.info("Active: {}", odooTest.getActive());
+
         try {
+            logger.info("Getting system user ID...");
             String sysUserId = auditingService.getSysUserId();
+            logger.info("System User ID: {}", sysUserId);
 
             if (odooTest.getIsPanel()) {
+                logger.info("Processing as panel...");
                 syncPanelFromOdoo(odooTest, sysUserId);
                 return;
             }
 
             // Try to find by external reference first
+            logger.info("Checking for existing external reference...");
             ExternalReference data = externalReferenceDao.getData(String.valueOf(odooTest.getId()), CATEGORY_TEST);
             Test test = null;
 
             if (data != null) {
+                logger.info("Found external reference, loading test by ID: {}", data.getItemId());
                 test = testDAO.getTestById(String.valueOf(data.getItemId()));
             } else {
                 // Try to find by name if external reference doesn't exist
+                logger.info("No external reference found, searching by name: {}", odooTest.getName());
                 test = testDAO.getTestByName(odooTest.getName());
             }
 
             if (test == null) {
+                logger.info("Test not found, creating new test...");
                 if (odooTest.getActive()) {
                     test = new Test();
+                    logger.info("Populating test data...");
                     populateTestFromOdoo(test, odooTest, sysUserId);
+                    logger.info("Inserting test into database...");
                     testDAO.insertData(test);
+                    logger.info("Test inserted with ID: {}", test.getId());
                     // Save external reference
+                    logger.info("Creating external reference...");
                     ExternalReference ref = new ExternalReference(Long.parseLong(test.getId()),
                             String.valueOf(odooTest.getId()), CATEGORY_TEST);
                     externalReferenceDao.insertData(ref);
+                    logger.info("External reference created");
+                } else {
+                    logger.info("Test is inactive, skipping creation");
                 }
             } else {
+                logger.info("Test found, updating existing test ID: {}", test.getId());
                 populateTestFromOdoo(test, odooTest, sysUserId);
+                logger.info("Updating test in database...");
                 testDAO.updateData(test);
+                logger.info("Test updated successfully");
             }
 
             // Simple result type handling (Numerical/Text)
             if (test != null && odooTest.getResultType() != null) {
+                logger.info("Processing result type: {}", odooTest.getResultType());
                 if (odooTest.getResultType().equalsIgnoreCase("numerical") ||
                         odooTest.getResultType().equalsIgnoreCase("text")) {
+                    logger.info("Creating/updating test result...");
                     testResultService.createOrUpdate(test, "R", null);
+                    logger.info("Test result processed");
                 }
             }
 
+            logger.info("Clearing test cache...");
             TypeOfSampleUtil.clearTestCache();
+            logger.info("=== Test sync completed successfully ===");
         } catch (Exception e) {
+            logger.error("=== Error in createOrUpdateFromOdoo ===", e);
+            logger.error("Error details: {}", e.getMessage());
+            logger.error("Stack trace:", e);
             throw new LIMSException(String.format("Error while saving test from Odoo - %s", odooTest.getName()), e);
         }
     }
 
     private Test populateTestFromOdoo(Test test, OdooTest odooTest, String sysUserId) throws IOException {
+        logger.info("=== Populating test from Odoo data ===");
         test.setTestName(odooTest.getName());
         test.setName(odooTest.getName());
         test.setDescription(
@@ -295,36 +338,60 @@ public class TestService {
         test.setSortOrder(odooTest.getSortOrder() != null ? String.valueOf(odooTest.getSortOrder()) : "0");
         test.setReferenceInfo(odooTest.getReferenceRange());
         test.setLoinc(odooTest.getLoinc());
+        logger.info("Basic test fields set");
 
         // Assign to department (Test Section) if provided - CREATE if it doesn't exist
         if (odooTest.getDepartment() != null && !odooTest.getDepartment().isEmpty()) {
+            logger.info("Processing department: {}", odooTest.getDepartment());
+
+            // Log current test section if exists
+            if (test.getTestSection() != null) {
+                logger.info("Current test section: {} (ID: {})",
+                        test.getTestSection().getTestSectionName(),
+                        test.getTestSection().getId());
+            } else {
+                logger.info("Test currently has no test section assigned");
+            }
+
             TestSection section = testSectionDAO.getTestSectionByName(odooTest.getDepartment());
             if (section == null) {
+                logger.info("Department not found, creating new test section: {}", odooTest.getDepartment());
                 section = new TestSection();
                 section.setTestSectionName(odooTest.getDepartment());
+                section.setDescription(odooTest.getDepartment()); // Set description (required field)
                 section.setIsActive(IActionConstants.YES);
                 section.setLastupdated(new Timestamp(new Date().getTime()));
                 section.setSysUserId(sysUserId);
                 testSectionDAO.insertData(section);
+                logger.info("Test section created with ID: {}", section.getId());
+            } else {
+                logger.info("Found existing test section with ID: {}", section.getId());
             }
             test.setTestSection(section);
+            logger.info("Test section set to: {} (ID: {})", section.getTestSectionName(), section.getId());
+        } else {
+            logger.info("No department provided in Odoo data");
         }
 
         // Assign to default test section if not set
         if (test.getTestSection() == null) {
+            logger.info("No department specified, using default test section");
             test.setTestSection(getTestSection(null));
         }
 
         // Set Unit of Measure
         if (odooTest.getUom() != null && !odooTest.getUom().isEmpty()) {
+            logger.info("Setting unit of measure: {}", odooTest.getUom());
             test.setUnitOfMeasure(unitOfMeasureService.create(odooTest.getUom()));
         }
 
         // Link to Sample Type so it appears in Collect Sample section
         if (odooTest.getSampleType() != null && !odooTest.getSampleType().isEmpty()) {
+            logger.info("Linking to sample type: {}", odooTest.getSampleType());
             linkTestToSampleType(test, odooTest.getSampleType(), sysUserId);
         }
 
+        logger.info("=== Test population completed ===");
         return test;
     }
 
@@ -353,37 +420,112 @@ public class TestService {
             }
         } catch (Exception e) {
             // Silently log or handle linking error
+            logger.warn("Error linking test to sample type", e);
+        }
+    }
+
+    private void linkPanelToSampleType(Panel panel, String sampleTypeName, String sysUserId) {
+        try {
+            logger.info("Attempting to link panel {} to sample type {}", panel.getPanelName(), sampleTypeName);
+            TypeOfSample tosParam = new TypeOfSample();
+            tosParam.setDescription(sampleTypeName);
+            // Search ignoring case
+            TypeOfSample tos = typeOfSampleDAO.getTypeOfSampleByDescriptionAndDomain(tosParam, true);
+            if (tos != null) {
+                logger.info("Found sample type with ID: {}", tos.getId());
+                // Check if link already exists
+                TypeOfSamplePanel existingLink = typeOfSamplePanelDAO.getTypeOfSamplePanelForPanel(panel.getId());
+                if (existingLink == null || !existingLink.getTypeOfSampleId().equals(tos.getId())) {
+                    logger.info("Creating new link between panel and sample type");
+                    TypeOfSamplePanel newLink = new TypeOfSamplePanel();
+                    newLink.setPanelId(panel.getId());
+                    newLink.setTypeOfSampleId(tos.getId());
+                    newLink.setSysUserId(sysUserId);
+                    typeOfSamplePanelDAO.insertData(newLink);
+                    logger.info("Panel successfully linked to sample type");
+                } else {
+                    logger.info("Link already exists between panel and sample type");
+                }
+            } else {
+                logger.warn("Sample type not found: {}", sampleTypeName);
+            }
+        } catch (Exception e) {
+            logger.error("Error linking panel to sample type", e);
         }
     }
 
     private void syncPanelFromOdoo(OdooTest odooTest, String sysUserId) throws LIMSException {
+        logger.info("=== Syncing panel from Odoo: {} ===", odooTest.getName());
         try {
             ExternalReference data = externalReferenceDao.getData(String.valueOf(odooTest.getId()), CATEGORY_PANEL);
             Panel panel = null;
             if (data != null) {
+                logger.info("Found external reference for panel, loading by ID: {}", data.getItemId());
                 panel = panelDAO.getPanelById(String.valueOf(data.getItemId()));
             } else {
+                logger.info("No external reference, searching panel by name: {}", odooTest.getName());
                 panel = panelDAO.getPanelByName(odooTest.getName());
             }
 
             if (panel == null) {
+                logger.info("Panel not found, creating new panel");
                 if (odooTest.getActive()) {
                     panel = new Panel();
                     populatePanelFromOdoo(panel, odooTest, sysUserId);
                     panelDAO.insertData(panel);
+                    logger.info("Panel created with ID: {}", panel.getId());
                     ExternalReference ref = new ExternalReference(Long.parseLong(panel.getId()),
                             String.valueOf(odooTest.getId()), CATEGORY_PANEL);
                     externalReferenceDao.insertData(ref);
+                    logger.info("External reference created for panel");
                 }
             } else {
+                logger.info("Panel found, updating existing panel ID: {}", panel.getId());
                 populatePanelFromOdoo(panel, odooTest, sysUserId);
                 panelDAO.updateData(panel);
+                logger.info("Panel updated");
             }
 
             if (panel != null) {
+                logger.info("Syncing panel items...");
                 syncPanelItems(panel, odooTest, sysUserId);
+
+                // Link panel to sample type so it appears in Collect Sample section
+                String sampleType = odooTest.getSampleType();
+
+                // If panel doesn't have explicit sample type, infer from first test in panel
+                if (sampleType == null || sampleType.isEmpty()) {
+                    logger.info("No explicit sample type for panel, checking component tests...");
+                    List<PanelItem> panelItems = panelItemDAO.getPanelItemsForPanel(panel.getId());
+                    if (panelItems != null && !panelItems.isEmpty()) {
+                        // Get the first test's sample type
+                        PanelItem firstItem = panelItems.get(0);
+                        Test firstTest = testDAO.getTestById(firstItem.getTest().getId());
+                        if (firstTest != null) {
+                            List<TypeOfSampleTest> sampleLinks = typeOfSampleTestDAO
+                                    .getTypeOfSampleTestsForTest(firstTest.getId());
+                            if (sampleLinks != null && !sampleLinks.isEmpty()) {
+                                TypeOfSample tos = typeOfSampleDAO
+                                        .getTypeOfSampleById(sampleLinks.get(0).getTypeOfSampleId());
+                                if (tos != null) {
+                                    sampleType = tos.getDescription();
+                                    logger.info("Inferred sample type from first test: {}", sampleType);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (sampleType != null && !sampleType.isEmpty()) {
+                    logger.info("Linking panel to sample type: {}", sampleType);
+                    linkPanelToSampleType(panel, sampleType, sysUserId);
+                } else {
+                    logger.info("No sample type available for panel (neither explicit nor inferred from tests)");
+                }
             }
+            logger.info("=== Panel sync completed ===");
         } catch (Exception e) {
+            logger.error("Error syncing panel from Odoo", e);
             throw new LIMSException(String.format("Error while saving panel from Odoo - %s", odooTest.getName()), e);
         }
     }
