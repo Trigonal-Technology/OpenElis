@@ -396,31 +396,45 @@ public class TestService {
     }
 
     private void linkTestToSampleType(Test test, String sampleTypeName, String sysUserId) {
+        logger.info("Attempting to link test '{}' (ID: {}) to sample type '{}'",
+                test.getTestName(), test.getId(), sampleTypeName);
         try {
             TypeOfSample tosParam = new TypeOfSample();
             tosParam.setDescription(sampleTypeName);
             // Search ignoring case
             TypeOfSample tos = typeOfSampleDAO.getTypeOfSampleByDescriptionAndDomain(tosParam, true);
             if (tos != null) {
+                logger.info("Found sample type '{}' with ID: {}", tos.getDescription(), tos.getId());
                 List<TypeOfSampleTest> existingLinks = typeOfSampleTestDAO.getTypeOfSampleTestsForTest(test.getId());
+                logger.info("Test has {} existing sample type links", existingLinks != null ? existingLinks.size() : 0);
                 boolean found = false;
                 for (TypeOfSampleTest link : existingLinks) {
                     if (link.getTypeOfSampleId().equals(tos.getId())) {
                         found = true;
+                        logger.info("Link already exists between test and sample type");
                         break;
                     }
                 }
                 if (!found) {
+                    logger.info("Creating new link between test {} and sample type {}", test.getId(), tos.getId());
                     TypeOfSampleTest newLink = new TypeOfSampleTest();
                     newLink.setTestId(test.getId());
                     newLink.setTypeOfSampleId(tos.getId());
                     newLink.setSysUserId(sysUserId);
                     typeOfSampleTestDAO.insertData(newLink);
+                    logger.info("Successfully linked test '{}' to sample type '{}'", test.getTestName(),
+                            sampleTypeName);
+                } else {
+                    logger.info("Test '{}' is already linked to sample type '{}'", test.getTestName(), sampleTypeName);
                 }
+            } else {
+                logger.warn(
+                        "Sample type '{}' not found in OpenELIS. Cannot link test '{}'. Available sample types should be created first.",
+                        sampleTypeName, test.getTestName());
             }
         } catch (Exception e) {
-            // Silently log or handle linking error
-            logger.warn("Error linking test to sample type", e);
+            logger.error("Error linking test '{}' to sample type '{}': {}",
+                    test.getTestName(), sampleTypeName, e.getMessage(), e);
         }
     }
 

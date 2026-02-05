@@ -97,7 +97,7 @@ import java.util.Set;
 
 public class OdooTestOrderService {
     private static final Logger logger = LogManager.getLogger(OdooTestOrderService.class);
-    
+
     private PatientDAO patientDAO;
     private PersonDAO personDAO;
     private PatientIdentityDAO patientIdentityDAO;
@@ -126,13 +126,13 @@ public class OdooTestOrderService {
     }
 
     public OdooTestOrderService(PatientDAO patientDAO, PersonDAO personDAO, PatientIdentityDAO patientIdentityDAO,
-                                PatientIdentityTypeDAO patientIdentityTypeDAO, SampleDAO sampleDAO,
-                                ExternalReferenceDao externalReferenceDao, PanelItemDAO panelItemDAO,
-                                TypeOfSampleTestDAO typeOfSampleTestDAO, TypeOfSampleDAO typeOfSampleDAO,
-                                TestDAO testDAO, AnalysisDAO analysisDAO, SampleItemDAO sampleItemDAO,
-                                SampleSourceDAO sampleSourceDAO, AuditingService auditingService,
-                                RequesterTypeDAO requesterTypeDAO, OrganizationTypeDAO organizationTypeDAO,
-                                ProviderDAO providerDAO) {
+            PatientIdentityTypeDAO patientIdentityTypeDAO, SampleDAO sampleDAO,
+            ExternalReferenceDao externalReferenceDao, PanelItemDAO panelItemDAO,
+            TypeOfSampleTestDAO typeOfSampleTestDAO, TypeOfSampleDAO typeOfSampleDAO,
+            TestDAO testDAO, AnalysisDAO analysisDAO, SampleItemDAO sampleItemDAO,
+            SampleSourceDAO sampleSourceDAO, AuditingService auditingService,
+            RequesterTypeDAO requesterTypeDAO, OrganizationTypeDAO organizationTypeDAO,
+            ProviderDAO providerDAO) {
         this.patientDAO = patientDAO;
         this.personDAO = personDAO;
         this.patientIdentityDAO = patientIdentityDAO;
@@ -155,38 +155,39 @@ public class OdooTestOrderService {
 
     public void processTestOrder(OdooTestOrder odooTestOrder) {
         String sysUserId = auditingService.getSysUserId();
-        
+
         try {
             // Validate and get/create patient
             Patient patient = getOrCreatePatient(odooTestOrder.getPatient(), sysUserId);
-            
+
             // Check if sample already exists for this sale order (using UUID)
             List<Sample> existingSamples = sampleDAO.getSamplesByEncounterUuid(odooTestOrder.getSaleOrderId());
             if (existingSamples != null && !existingSamples.isEmpty()) {
                 logger.warn("Sample already exists for sale order ID: " + odooTestOrder.getSaleOrderId());
-                throw new LIMSRuntimeException("Sample already exists for sale order ID: " + odooTestOrder.getSaleOrderId());
+                throw new LIMSRuntimeException(
+                        "Sample already exists for sale order ID: " + odooTestOrder.getSaleOrderId());
             }
-            
+
             // Create sample
             Date nowAsSqlDate = DateUtil.getNowAsSqlDate();
             Sample sample = createSample(odooTestOrder, sysUserId, nowAsSqlDate);
-            
+
             // Create sample test order collections
-            List<SampleTestOrderCollection> sampleTestOrderCollectionList = 
-                    createSampleTestOrderCollections(odooTestOrder.getOrderLines(), sysUserId, nowAsSqlDate, sample);
-            
+            List<SampleTestOrderCollection> sampleTestOrderCollectionList = createSampleTestOrderCollections(
+                    odooTestOrder.getOrderLines(), sysUserId, nowAsSqlDate, sample);
+
             if (sampleTestOrderCollectionList.isEmpty()) {
                 logger.warn("No valid test orders found for sale order: " + odooTestOrder.getSaleOrderId());
                 throw new LIMSRuntimeException("No valid test orders found");
             }
-            
+
             // Create sample human link
             SampleHuman sampleHuman = new SampleHuman();
             sampleHuman.setSysUserId(sysUserId);
-            
+
             // Create analysis builder
             AnalysisBuilder analysisBuilder = new AnalysisBuilder();
-            
+
             // Persist sample
             AddSampleService addSampleService = new AddSampleService(false);
             long providerRequesterTypeId = getProviderRequesterTypeId();
@@ -196,9 +197,9 @@ public class OdooTestOrderService {
                     sampleTestOrderCollectionList, new ArrayList<ObservationHistory>(), sampleHuman,
                     patient.getId(), null, null, sysUserId,
                     providerRequesterTypeId, referringOrgTypeId);
-            
+
             logger.info("Successfully created sample for sale order: " + odooTestOrder.getSaleOrderId());
-            
+
         } catch (Exception e) {
             logger.error("Error processing Odoo test order: " + odooTestOrder.getSaleOrderId(), e);
             ElisHibernateSession session = (ElisHibernateSession) HibernateUtil.getSession();
@@ -213,7 +214,7 @@ public class OdooTestOrderService {
         if (odooPatient.getUuid() != null && !odooPatient.getUuid().isEmpty()) {
             patient = patientDAO.getPatientByUUID(odooPatient.getUuid());
         }
-        
+
         // If not found by UUID, try to find by ref (ST identifier)
         if (patient == null && odooPatient.getRef() != null && !odooPatient.getRef().isEmpty()) {
             String stTypeId = PatientIdentityTypeMap.getInstance().getIDForType("ST");
@@ -222,7 +223,7 @@ public class OdooTestOrderService {
                 patient = patients.get(0);
             }
         }
-        
+
         // If still not found, create new patient
         if (patient == null) {
             patient = createPatient(odooPatient, sysUserId);
@@ -230,7 +231,7 @@ public class OdooTestOrderService {
             // Update patient if UUID matches or needs update
             updatePatient(patient, odooPatient, sysUserId);
         }
-        
+
         return patient;
     }
 
@@ -243,7 +244,7 @@ public class OdooTestOrderService {
         person.setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : null);
         person.setSysUserId(sysUserId);
         personDAO.insertData(person);
-        
+
         // Create patient
         Patient patient = new Patient();
         patient.setPerson(person);
@@ -251,7 +252,7 @@ public class OdooTestOrderService {
         if (odooPatient.getUuid() != null && !odooPatient.getUuid().isEmpty()) {
             patient.setUuid(odooPatient.getUuid());
         }
-        
+
         // Set birthdate if provided
         if (odooPatient.getBirthdate() != null && !odooPatient.getBirthdate().isEmpty()) {
             try {
@@ -260,12 +261,13 @@ public class OdooTestOrderService {
                 java.util.Date birthDate = isoFormat.parse(odooPatient.getBirthdate());
                 patient.setBirthDate(new Timestamp(birthDate.getTime()));
             } catch (ParseException e) {
-                logger.warn("Failed to parse birthdate '{}' for patient {}. Error: {}", 
-                           odooPatient.getBirthdate(), odooPatient.getRef(), e.getMessage());
+                logger.warn("Failed to parse birthdate '{}' for patient {}. Error: {}",
+                        odooPatient.getBirthdate(), odooPatient.getRef(), e.getMessage());
             }
         }
-        
-        // Set gender if provided (convert Odoo values to OpenELIS format: M, F, or empty)
+
+        // Set gender if provided (convert Odoo values to OpenELIS format: M, F, or
+        // empty)
         if (odooPatient.getGender() != null && !odooPatient.getGender().isEmpty()) {
             String genderCode = "";
             if (odooPatient.getGender().equalsIgnoreCase("male")) {
@@ -280,9 +282,9 @@ public class OdooTestOrderService {
                 patient.setGender(genderCode);
             }
         }
-        
+
         patientDAO.insertData(patient);
-        
+
         // Create patient identity (ST - ref field)
         if (odooPatient.getRef() != null && !odooPatient.getRef().isEmpty()) {
             String stTypeId = PatientIdentityTypeMap.getInstance().getIDForType("ST");
@@ -293,19 +295,19 @@ public class OdooTestOrderService {
             patientIdentity.setSysUserId(sysUserId);
             patientIdentityDAO.insertData(patientIdentity);
         }
-        
+
         return patient;
     }
 
     private void updatePatient(Patient patient, OdooPatient odooPatient, String sysUserId) {
         // Update UUID if provided and different
-        if (odooPatient.getUuid() != null && !odooPatient.getUuid().isEmpty() 
+        if (odooPatient.getUuid() != null && !odooPatient.getUuid().isEmpty()
                 && (patient.getUuid() == null || !patient.getUuid().equals(odooPatient.getUuid()))) {
             patient.setUuid(odooPatient.getUuid());
             patient.setSysUserId(sysUserId);
             patientDAO.updateData(patient);
         }
-        
+
         // Update person name if provided
         Person person = patient.getPerson();
         if (odooPatient.getName() != null && !odooPatient.getName().isEmpty()) {
@@ -316,7 +318,7 @@ public class OdooTestOrderService {
             person.setSysUserId(sysUserId);
             personDAO.updateData(person);
         }
-        
+
         // Update birthdate if provided
         if (odooPatient.getBirthdate() != null && !odooPatient.getBirthdate().isEmpty()) {
             try {
@@ -324,7 +326,7 @@ public class OdooTestOrderService {
                 SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd");
                 java.util.Date birthDate = isoFormat.parse(odooPatient.getBirthdate());
                 Timestamp birthTimestamp = new Timestamp(birthDate.getTime());
-                
+
                 // Only update if different
                 if (patient.getBirthDate() == null || !patient.getBirthDate().equals(birthTimestamp)) {
                     patient.setBirthDate(birthTimestamp);
@@ -332,11 +334,11 @@ public class OdooTestOrderService {
                     patientDAO.updateData(patient);
                 }
             } catch (ParseException e) {
-                logger.warn("Failed to parse birthdate '{}' for patient {}. Error: {}", 
-                           odooPatient.getBirthdate(), odooPatient.getRef(), e.getMessage());
+                logger.warn("Failed to parse birthdate '{}' for patient {}. Error: {}",
+                        odooPatient.getBirthdate(), odooPatient.getRef(), e.getMessage());
             }
         }
-        
+
         // Update gender if provided
         if (odooPatient.getGender() != null && !odooPatient.getGender().isEmpty()) {
             String genderCode = "";
@@ -357,11 +359,11 @@ public class OdooTestOrderService {
 
     private String[] parseName(String fullName) {
         if (fullName == null || fullName.trim().isEmpty()) {
-            return new String[]{"Unknown", ""};
+            return new String[] { "Unknown", "" };
         }
         String[] parts = fullName.trim().split("\\s+");
         if (parts.length == 1) {
-            return new String[]{parts[0], ""};
+            return new String[] { parts[0], "" };
         }
         return parts;
     }
@@ -370,39 +372,48 @@ public class OdooTestOrderService {
         Sample sample = new Sample();
         sample.setSysUserId(sysUserId);
         sample.setAccessionNumber(null);
-        
+
         // Set sample source - use default or first available
         List<SampleSource> sampleSources = sampleSourceDAO.getAll();
         if (sampleSources != null && !sampleSources.isEmpty()) {
             sample.setSampleSource(sampleSources.get(0));
         }
-        
+
         sample.setEnteredDate(new java.util.Date());
         sample.setReceivedDate(nowAsSqlDate);
         sample.setDomain(SystemConfiguration.getInstance().getHumanDomain());
         sample.setStatusId(StatusOfSampleUtil.getStatusID(StatusOfSampleUtil.OrderStatus.Entered));
-        
+
         // Use sale order ID as UUID
         sample.setUUID(odooTestOrder.getSaleOrderId());
-        
+
         return sample;
     }
 
     private List<SampleTestOrderCollection> createSampleTestOrderCollections(
             List<OdooTestOrderLine> orderLines, String sysUserId, Date nowAsSqlDate, Sample sample) {
-        
+
         List<SampleTestOrderCollection> sampleTestOrderCollectionList = new ArrayList<>();
         Map<String, SampleItem> sampleItemMap = new HashMap<>();
         Map<String, List<TestOrder>> testOrderMap = new HashMap<>();
-        
+
         for (OdooTestOrderLine orderLine : orderLines) {
             try {
                 List<TestOrder> testOrders = getTestsForOrderLine(orderLine);
-                
+
                 for (TestOrder testOrder : testOrders) {
                     TypeOfSample typeOfSample = TypeOfSampleUtil.getTypeOfSampleForTest(testOrder.getTest().getId());
+                    if (typeOfSample == null) {
+                        String testName = testOrder.getTest().getTestName();
+                        String testId = testOrder.getTest().getId();
+                        logger.error("Test '{}' (ID: {}) is not linked to any sample type.", testName, testId);
+                        throw new LIMSRuntimeException(
+                                String.format("Test '%s' (ID: %s) is not linked to any sample type. " +
+                                        "Please link this test to a sample type in OpenELIS.",
+                                        testName, testId));
+                    }
                     String sampleTypeId = typeOfSample.getId();
-                    
+
                     // Get or create sample item for this sample type
                     SampleItem sampleItem = sampleItemMap.get(sampleTypeId);
                     if (sampleItem == null) {
@@ -410,7 +421,7 @@ public class OdooTestOrderService {
                         sampleItemMap.put(sampleTypeId, sampleItem);
                         testOrderMap.put(sampleTypeId, new ArrayList<TestOrder>());
                     }
-                    
+
                     // Add test order to the list for this sample item
                     testOrderMap.get(sampleTypeId).add(testOrder);
                 }
@@ -419,26 +430,26 @@ public class OdooTestOrderService {
                 // Continue with other order lines
             }
         }
-        
+
         // Create SampleTestOrderCollection for each sample item
         for (Map.Entry<String, SampleItem> entry : sampleItemMap.entrySet()) {
             String sampleTypeId = entry.getKey();
             SampleItem sampleItem = entry.getValue();
             List<TestOrder> testOrders = testOrderMap.get(sampleTypeId);
-            
+
             if (testOrders != null && !testOrders.isEmpty()) {
-                SampleTestOrderCollection collection = new SampleTestOrderCollection(sampleItem, testOrders, nowAsSqlDate);
+                SampleTestOrderCollection collection = new SampleTestOrderCollection(sampleItem, testOrders,
+                        nowAsSqlDate);
                 sampleTestOrderCollectionList.add(collection);
             }
         }
-        
         return sampleTestOrderCollectionList;
     }
 
     private List<TestOrder> getTestsForOrderLine(OdooTestOrderLine orderLine) {
         String productUuid = orderLine.getProductUuid();
         String productType = orderLine.getProductType();
-        
+
         if ("Panel".equals(productType)) {
             return getTestsForPanel(productUuid, orderLine.getComment());
         } else {
@@ -447,20 +458,28 @@ public class OdooTestOrderService {
     }
 
     private List<TestOrder> getTest(String productUuid, String comment) {
+        logger.info("Looking up test with product UUID: {}", productUuid);
         String productTypeTest = "Test";
         ExternalReference externalRef = externalReferenceDao.getData(productUuid, productTypeTest);
         if (externalRef == null) {
+            logger.error("No external reference found for product UUID '{}' with type '{}'", productUuid,
+                    productTypeTest);
             throw new LIMSRuntimeException(
-                    String.format("Test with UUID '%s' was not setup properly. No external reference found in external_reference table",
+                    String.format(
+                            "Test with UUID '%s' was not setup properly. No external reference found in external_reference table",
                             productUuid));
         }
-        
+
         long testId = externalRef.getItemId();
+        logger.info("Found external reference: product UUID {} -> test ID {}", productUuid, testId);
         Test test = testDAO.getTestById(String.valueOf(testId));
         if (test == null) {
+            logger.error("Test with ID {} not found in database", testId);
             throw new LIMSRuntimeException("Test with ID " + testId + " not found");
         }
-        
+
+        logger.info("Successfully retrieved test: {} (ID: {})", test.getTestName(), test.getId());
+
         List<TestOrder> tests = new ArrayList<>();
         tests.add(new TestOrder(test, comment));
         return tests;
@@ -472,17 +491,18 @@ public class OdooTestOrderService {
         ExternalReference externalRef = externalReferenceDao.getData(productUuid, productTypePanel);
         if (externalRef == null) {
             throw new LIMSRuntimeException(
-                    String.format("Panel with UUID '%s' was not setup properly. No external reference found in external_reference table",
+                    String.format(
+                            "Panel with UUID '%s' was not setup properly. No external reference found in external_reference table",
                             productUuid));
         }
-        
+
         long panelId = externalRef.getItemId();
         List panelItemsForPanel = panelItemDAO.getPanelItemsForPanel(String.valueOf(panelId));
         for (Object obj : panelItemsForPanel) {
             PanelItem panelItem = (PanelItem) obj;
             testOrders.add(new TestOrder(panelItem.getTest(), comment));
         }
-        
+
         return testOrders;
     }
 
