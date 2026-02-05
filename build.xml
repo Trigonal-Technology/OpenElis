@@ -98,7 +98,7 @@
     </target>
 
     <target name="migrationScripts">
-        <zip destfile="OpenElis.zip" basedir="../" includes="OpenElis**/**" excludes="**/.idea/**,*.iml,*.git*,**/dist/*,**/target/*,*.svn*,**/out/**,**/openelis/**,**/src/**,**/logs/**,**/junit/*,**/OpenElis.zip" />
+        <zip destfile="OpenElis.zip" basedir="../" includes="Openelis**/**" excludes="**/.idea/**,*.iml,*.git*,**/dist/*,**/target/*,*.svn*,**/out/**,**/openelis/**,**/src/**,**/logs/**,**/junit/*,**/OpenElis.zip" />
     </target>
 
     <target name="build" depends="clean, compile, resetDB, test, report, dist"/>
