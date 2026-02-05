@@ -242,6 +242,18 @@ public class OdooTestOrderService {
         person.setFirstName(nameParts[0]);
         person.setMiddleName(nameParts.length > 2 ? nameParts[1] : null);
         person.setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : null);
+        person.setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : null);
+
+        // Set Address
+        if (odooPatient.getAddress() != null) {
+            java.util.Map<String, String> address = odooPatient.getAddress();
+            person.setStreetAddress(address.get("street"));
+            person.setCity(address.get("city"));
+            person.setState(address.get("state"));
+            person.setZipCode(address.get("zip"));
+            person.setCountry(address.get("country"));
+        }
+
         person.setSysUserId(sysUserId);
         personDAO.insertData(person);
 
@@ -296,6 +308,32 @@ public class OdooTestOrderService {
             patientIdentityDAO.insertData(patientIdentity);
         }
 
+        // Occupation
+        if (odooPatient.getOccupation() != null && !odooPatient.getOccupation().isEmpty()) {
+            String typeId = PatientIdentityTypeMap.getInstance().getIDForType("OCCUPATION");
+            if (typeId != null) {
+                PatientIdentity pi = new PatientIdentity();
+                pi.setIdentityTypeId(typeId);
+                pi.setPatientId(patient.getId());
+                pi.setIdentityData(odooPatient.getOccupation());
+                pi.setSysUserId(sysUserId);
+                patientIdentityDAO.insertData(pi);
+            }
+        }
+
+        // Primary Relative
+        if (odooPatient.getPrimaryRelative() != null && !odooPatient.getPrimaryRelative().isEmpty()) {
+            String typeId = PatientIdentityTypeMap.getInstance().getIDForType("PRIMARYRELATIVE");
+            if (typeId != null) {
+                PatientIdentity pi = new PatientIdentity();
+                pi.setIdentityTypeId(typeId);
+                pi.setPatientId(patient.getId());
+                pi.setIdentityData(odooPatient.getPrimaryRelative());
+                pi.setSysUserId(sysUserId);
+                patientIdentityDAO.insertData(pi);
+            }
+        }
+
         return patient;
     }
 
@@ -315,6 +353,18 @@ public class OdooTestOrderService {
             person.setFirstName(nameParts[0]);
             person.setMiddleName(nameParts.length > 2 ? nameParts[1] : null);
             person.setLastName(nameParts.length > 1 ? nameParts[nameParts.length - 1] : null);
+            person.setSysUserId(sysUserId);
+            personDAO.updateData(person);
+        }
+
+        // Update address if provided
+        if (odooPatient.getAddress() != null) {
+            java.util.Map<String, String> address = odooPatient.getAddress();
+            person.setStreetAddress(address.get("street"));
+            person.setCity(address.get("city"));
+            person.setState(address.get("state"));
+            person.setZipCode(address.get("zip"));
+            person.setCountry(address.get("country"));
             person.setSysUserId(sysUserId);
             personDAO.updateData(person);
         }
@@ -354,6 +404,16 @@ public class OdooTestOrderService {
                 patient.setSysUserId(sysUserId);
                 patientDAO.updateData(patient);
             }
+        }
+
+        // Update Occupation
+        if (odooPatient.getOccupation() != null && !odooPatient.getOccupation().isEmpty()) {
+            addOrUpdateIdentity(patient, "OCCUPATION", odooPatient.getOccupation(), sysUserId);
+        }
+
+        // Update Primary Relative
+        if (odooPatient.getPrimaryRelative() != null && !odooPatient.getPrimaryRelative().isEmpty()) {
+            addOrUpdateIdentity(patient, "PRIMARYRELATIVE", odooPatient.getPrimaryRelative(), sysUserId);
         }
     }
 
@@ -534,5 +594,34 @@ public class OdooTestOrderService {
         // Return default or first organization type ID
         // This can be customized based on requirements
         return null;
+    }
+
+    private void addOrUpdateIdentity(Patient patient, String typeName, String value, String sysUserId) {
+        String typeId = PatientIdentityTypeMap.getInstance().getIDForType(typeName);
+        if (typeId != null) {
+            // Check if exists
+            List<PatientIdentity> existing = patientIdentityDAO.getPatientIdentitiesForPatient(patient.getId());
+            PatientIdentity identity = null;
+            if (existing != null) {
+                for (PatientIdentity pi : existing) {
+                    if (pi.getIdentityTypeId().equals(typeId)) {
+                        identity = pi;
+                        break;
+                    }
+                }
+            }
+            if (identity == null) {
+                identity = new PatientIdentity();
+                identity.setIdentityTypeId(typeId);
+                identity.setPatientId(patient.getId());
+                identity.setIdentityData(value);
+                identity.setSysUserId(sysUserId);
+                patientIdentityDAO.insertData(identity);
+            } else if (!value.equals(identity.getIdentityData())) {
+                identity.setIdentityData(value);
+                identity.setSysUserId(sysUserId);
+                patientIdentityDAO.updateData(identity);
+            }
+        }
     }
 }

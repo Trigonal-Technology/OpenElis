@@ -284,6 +284,11 @@ public class TestService {
                     logger.info("Inserting test into database...");
                     testDAO.insertData(test);
                     logger.info("Test inserted with ID: {}", test.getId());
+
+                    // Link to Sample Type
+                    if (odooTest.getSampleType() != null && !odooTest.getSampleType().isEmpty()) {
+                        linkTestToSampleType(test, odooTest.getSampleType(), sysUserId);
+                    }
                     // Save external reference
                     logger.info("Creating external reference...");
                     ExternalReference ref = new ExternalReference(Long.parseLong(test.getId()),
@@ -298,6 +303,11 @@ public class TestService {
                 populateTestFromOdoo(test, odooTest, sysUserId);
                 logger.info("Updating test in database...");
                 testDAO.updateData(test);
+
+                // Link to Sample Type
+                if (odooTest.getSampleType() != null && !odooTest.getSampleType().isEmpty()) {
+                    linkTestToSampleType(test, odooTest.getSampleType(), sysUserId);
+                }
                 logger.info("Test updated successfully");
             }
 
@@ -341,8 +351,15 @@ public class TestService {
         logger.info("Basic test fields set");
 
         // Assign to department (Test Section) if provided - CREATE if it doesn't exist
-        if (odooTest.getDepartment() != null && !odooTest.getDepartment().isEmpty()) {
-            logger.info("Processing department: {}", odooTest.getDepartment());
+        // Assign to department (Test Section) if provided - CREATE if it doesn't exist
+        // Fallback to Category if elis_department is not set
+        String departmentName = odooTest.getDepartment();
+        if (departmentName == null || departmentName.isEmpty()) {
+            departmentName = odooTest.getCategory();
+        }
+
+        if (departmentName != null && !departmentName.isEmpty()) {
+            logger.info("Processing department: {}", departmentName);
 
             // Log current test section if exists
             if (test.getTestSection() != null) {
@@ -353,12 +370,12 @@ public class TestService {
                 logger.info("Test currently has no test section assigned");
             }
 
-            TestSection section = testSectionDAO.getTestSectionByName(odooTest.getDepartment());
+            TestSection section = testSectionDAO.getTestSectionByName(departmentName);
             if (section == null) {
-                logger.info("Department not found, creating new test section: {}", odooTest.getDepartment());
+                logger.info("Department not found, creating new test section: {}", departmentName);
                 section = new TestSection();
-                section.setTestSectionName(odooTest.getDepartment());
-                section.setDescription(odooTest.getDepartment()); // Set description (required field)
+                section.setTestSectionName(departmentName);
+                section.setDescription(departmentName); // Set description (required field)
                 section.setIsActive(IActionConstants.YES);
                 section.setLastupdated(new Timestamp(new Date().getTime()));
                 section.setSysUserId(sysUserId);
@@ -385,11 +402,7 @@ public class TestService {
             test.setUnitOfMeasure(unitOfMeasureService.create(odooTest.getUom()));
         }
 
-        // Link to Sample Type so it appears in Collect Sample section
-        if (odooTest.getSampleType() != null && !odooTest.getSampleType().isEmpty()) {
-            logger.info("Linking to sample type: {}", odooTest.getSampleType());
-            linkTestToSampleType(test, odooTest.getSampleType(), sysUserId);
-        }
+        // Link to Sample Type moved to createOrUpdateFromOdoo to ensure Test ID exists
 
         logger.info("=== Test population completed ===");
         return test;

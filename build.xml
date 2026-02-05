@@ -47,7 +47,7 @@
     </target>
 
 
-    <target name="compile" depends="init, java.compile, compass.compile"
+    <target name="compile" depends="init, java.compile, compass.compile, jasper.compile"
         description="compile the source ">
     </target>
 
