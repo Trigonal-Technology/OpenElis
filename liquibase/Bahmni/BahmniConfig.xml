@@ -715,7 +715,7 @@
     <changeSet author="tw" id="48" context="bahmni">
         <comment>Set site name</comment>
         <update schemaName="clinlims" tableName="site_information">
-            <column name="value" value="Abreshum Labs"/>
+            <column name="value" value="Openelis"/>
             <where>name='SiteName'</where>
         </update>
     </changeSet>
@@ -1848,7 +1848,7 @@
     <changeSet author="abershumlabs" id="site-name-update" context="bahmni">
         <comment>Set site name</comment>
         <update schemaName="clinlims" tableName="site_information">
-            <column name="value" value="Abreshum Labs"/>
+            <column name="value" value="Openelis"/>
             <where>name='SiteName'</where>
         </update>
     </changeSet>
